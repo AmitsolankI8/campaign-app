@@ -34,7 +34,8 @@ export default defineConfig({
     server: {
         host: '0.0.0.0',
         hmr: {
-            host: 'campaign-app.local'
+            host: 'localhost',
+            port: 8000
         }
     }
 });
