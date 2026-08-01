@@ -6,11 +6,19 @@
         "build": "vite build",
         "build:ssr": "vite build && vite build --ssr",
         "dev": "vite",
+        
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",
+        
         "lint": "eslint . --fix",
         "lint:check": "eslint .",
-        "types:check": "vue-tsc --noEmit"
+        
+        "types:check": "vue-tsc --noEmit",
+        
+        "pint": "vendor\\bin\\pint.bat",
+        "pint:test": "vendor\\bin\\pint.bat --test",
+
+        "format:fix": "npm run lint && npm run format && npm run pint"
     },
     "devDependencies": {
         "@eslint/js": "^9.19.0",
