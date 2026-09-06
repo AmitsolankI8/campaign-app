@@ -28,6 +28,7 @@ class UpdateRoleRequest extends FormRequest
                 'string',
                 'max:255',
                 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                $role->name === 'admin' ? Rule::in(['admin']) : Rule::notIn(['admin']),
                 Rule::unique((new Role)->getTable(), 'name')->ignore($role),
             ],
             'short_note' => ['nullable', 'string', 'max:255'],

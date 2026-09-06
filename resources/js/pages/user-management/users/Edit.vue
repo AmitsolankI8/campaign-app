@@ -10,6 +10,8 @@ type ManagedUser = {
     last_name: string;
     email: string;
     roles: string[];
+    roles_locked: boolean;
+    can_edit: boolean;
 };
 
 defineProps<{

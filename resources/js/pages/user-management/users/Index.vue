@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from '@lucide/vue';
+import { computed } from 'vue';
 import {
     create,
     destroy,
@@ -17,9 +18,11 @@ type UserRow = {
     email: string;
     created_at: string | null;
     roles: string[];
+    can_delete: boolean;
+    can_edit: boolean;
 };
 
-defineProps<{
+const props = defineProps<{
     users: UserRow[];
 }>();
 
@@ -35,9 +38,21 @@ defineOptions({
 });
 
 const { hasPermissions } = usePermissions();
+const page = usePage();
+
+const canEditUser = (user: UserRow): boolean =>
+    hasPermissions(['users.edit']) &&
+    (user.id === page.props.auth?.user?.id || user.can_edit === true);
+
+const showActions = computed(
+    () =>
+        props.users.some(canEditUser) ||
+        (hasPermissions(['users.delete']) &&
+            props.users.some((user) => user.can_delete)),
+);
 
 const deleteUser = (user: UserRow) => {
-    if (!hasPermissions(['users.delete'])) {
+    if (!hasPermissions(['users.delete']) || !user.can_delete) {
         return;
     }
 
@@ -77,9 +92,7 @@ const deleteUser = (user: UserRow) => {
                         <th class="px-4 py-3 font-medium">Roles</th>
                         <th class="px-4 py-3 font-medium">Created</th>
                         <th
-                            v-if="
-                                hasPermissions(['users.edit', 'users.delete'])
-                            "
+                            v-if="showActions"
                             class="w-40 px-4 py-3 text-right font-medium"
                         >
                             Actions
@@ -89,11 +102,7 @@ const deleteUser = (user: UserRow) => {
                 <tbody>
                     <tr v-if="users.length === 0">
                         <td
-                            :colspan="
-                                hasPermissions(['users.edit', 'users.delete'])
-                                    ? 5
-                                    : 4
-                            "
+                            :colspan="showActions ? 5 : 4"
                             class="px-4 py-8 text-center text-muted-foreground"
                         >
                             No users found.
@@ -126,15 +135,10 @@ const deleteUser = (user: UserRow) => {
                         <td class="px-4 py-3 text-muted-foreground">
                             {{ user.created_at ?? '—' }}
                         </td>
-                        <td
-                            v-if="
-                                hasPermissions(['users.edit', 'users.delete'])
-                            "
-                            class="px-4 py-3"
-                        >
+                        <td v-if="showActions" class="px-4 py-3">
                             <div class="flex justify-end gap-2">
                                 <Button
-                                    v-if="hasPermissions(['users.edit'])"
+                                    v-if="canEditUser(user)"
                                     size="sm"
                                     variant="outline"
                                     as-child
@@ -145,7 +149,10 @@ const deleteUser = (user: UserRow) => {
                                     </Link>
                                 </Button>
                                 <Button
-                                    v-if="hasPermissions(['users.delete'])"
+                                    v-if="
+                                        hasPermissions(['users.delete']) &&
+                                        user.can_delete
+                                    "
                                     size="sm"
                                     variant="destructive"
                                     type="button"

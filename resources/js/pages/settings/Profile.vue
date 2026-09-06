@@ -24,6 +24,7 @@ defineOptions({
 });
 
 const page = usePage();
+defineProps<{ canDeleteAccount: boolean }>();
 const user = computed(() => page.props.auth.user);
 </script>
 
@@ -117,5 +118,5 @@ const user = computed(() => page.props.auth.user);
         </Form>
     </div>
 
-    <DeleteUser />
+    <DeleteUser v-if="canDeleteAccount" />
 </template>

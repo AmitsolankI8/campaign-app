@@ -29,6 +29,8 @@ type ManagedUser = {
     last_name: string;
     email: string;
     roles: string[];
+    roles_locked: boolean;
+    can_edit: boolean;
 };
 
 const props = defineProps<{
@@ -50,17 +52,28 @@ const form = useForm({
 });
 
 const toggleRole = (role: string, checked: boolean) => {
+    if (props.managedUser?.roles_locked || role === 'admin') {
+        return;
+    }
+
     form.roles = checked
         ? [...form.roles, role]
         : form.roles.filter((item) => item !== role);
 };
 
 const submit = () => {
-    if (!hasPermissions([isEditing ? 'users.edit' : 'users.create'])) {
+    if (
+        !hasPermissions([isEditing ? 'users.edit' : 'users.create']) ||
+        (props.managedUser && !props.managedUser.can_edit)
+    ) {
         return;
     }
 
     if (props.managedUser) {
+        if (props.managedUser.roles_locked) {
+            form.roles = [...props.managedUser.roles];
+        }
+
         form.put(update.url(props.managedUser.id), {
             preserveScroll: true,
             onSuccess: () => form.reset('password', 'password_confirmation'),
@@ -154,7 +167,11 @@ const submit = () => {
             <CardHeader>
                 <CardTitle>Role assignment</CardTitle>
                 <CardDescription>
-                    Assign one or more seeded roles to this user.
+                    {{
+                        managedUser?.roles_locked
+                            ? 'The administrator user’s roles cannot be changed.'
+                            : 'Assign roles to this user. The administrator role is reserved.'
+                    }}
                 </CardDescription>
             </CardHeader>
             <CardContent class="grid gap-3 md:grid-cols-2">
@@ -164,6 +181,9 @@ const submit = () => {
                     class="flex items-center gap-3 rounded-lg border p-3"
                 >
                     <Checkbox
+                        :disabled="
+                            managedUser?.roles_locked || role.name === 'admin'
+                        "
                         :model-value="form.roles.includes(role.name)"
                         @update:model-value="
                             (value) => toggleRole(role.name, value === true)
@@ -191,7 +211,10 @@ const submit = () => {
             </Button>
             <Button
                 v-if="
-                    hasPermissions([isEditing ? 'users.edit' : 'users.create'])
+                    hasPermissions([
+                        isEditing ? 'users.edit' : 'users.create',
+                    ]) &&
+                    (!managedUser || managedUser.can_edit)
                 "
                 type="submit"
                 :disabled="form.processing"

@@ -25,7 +25,7 @@ class StoreUserRequest extends FormRequest
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'confirmed', Password::defaults()],
             'roles' => ['array'],
-            'roles.*' => ['string', Rule::exists((new Role)->getTable(), 'name')],
+            'roles.*' => ['string', Rule::notIn(['admin']), Rule::exists((new Role)->getTable(), 'name')],
         ];
     }
 }

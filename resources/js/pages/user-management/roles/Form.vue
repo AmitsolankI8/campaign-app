@@ -98,6 +98,7 @@ const submit = () => {
                     <Input
                         id="name"
                         v-model="form.name"
+                        :disabled="role?.name === 'admin'"
                         placeholder="support-manager"
                         required
                     />

@@ -34,7 +34,8 @@ class UserManagementSeeder extends Seeder
         ])->getAttributes());
         $adminRole->syncPermissions($permissions);
 
-        $adminUser = User::query()->where('email', 'admin@example.com')->first()
+        $adminUser = User::role($adminRole)->first()
+            ?? User::query()->where('email', 'admin@example.com')->first()
             ?? User::factory()->unverified()->create([
                 'email' => 'admin@example.com',
                 'first_name' => 'Admin',

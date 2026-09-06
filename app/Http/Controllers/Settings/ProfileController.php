@@ -22,6 +22,7 @@ class ProfileController extends Controller
         return Inertia::render('settings/Profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'canDeleteAccount' => ! $request->user()->hasRole('admin'),
         ]);
     }
 
@@ -49,6 +50,8 @@ class ProfileController extends Controller
     public function destroy(ProfileDeleteRequest $request): RedirectResponse
     {
         $user = $request->user();
+
+        abort_if($user->hasRole('admin'), 422, __('The administrator user cannot be deleted.'));
 
         Auth::logout();
 

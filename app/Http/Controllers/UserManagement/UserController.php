@@ -29,6 +29,8 @@ class UserController extends Controller
                     'email' => $user->email,
                     'created_at' => $user->created_at?->toDateString(),
                     'roles' => $user->roles->pluck('display_name')->values(),
+                    'can_delete' => ! $user->hasRole('admin') && ! $user->is(auth()->user()),
+                    'can_edit' => ! $user->hasRole('admin') || $user->is(auth()->user()),
                 ]),
         ]);
     }
@@ -56,6 +58,8 @@ class UserController extends Controller
     {
         Gate::authorize('users.edit');
 
+        abort_if($user->hasRole('admin') && ! $user->is(auth()->user()), 403, __('Only the administrator can edit their own account.'));
+
         return Inertia::render('user-management/users/Edit', [
             'managedUser' => [
                 'id' => $user->id,
@@ -63,6 +67,8 @@ class UserController extends Controller
                 'last_name' => $user->last_name,
                 'email' => $user->email,
                 'roles' => $user->roles()->pluck('name'),
+                'roles_locked' => $user->hasRole('admin'),
+                'can_edit' => ! $user->hasRole('admin') || $user->is(auth()->user()),
             ],
             'roles' => $this->roles(),
         ]);
@@ -77,7 +83,9 @@ class UserController extends Controller
         }
 
         $user->save();
-        $user->syncRoles($request->validated('roles', []));
+        if (! $user->hasRole('admin')) {
+            $user->syncRoles($request->validated('roles', []));
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('User updated.')]);
 
@@ -87,6 +95,8 @@ class UserController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         Gate::authorize('users.delete');
+
+        abort_if($user->hasRole('admin'), 422, __('The administrator user cannot be deleted.'));
 
         abort_if($user->is(auth()->user()), 422, __('You cannot delete your own account here.'));
 
