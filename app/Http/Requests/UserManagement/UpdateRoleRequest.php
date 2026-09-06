@@ -19,6 +19,7 @@ class UpdateRoleRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var Role $role */
         $role = $this->route('role');
 
         return [

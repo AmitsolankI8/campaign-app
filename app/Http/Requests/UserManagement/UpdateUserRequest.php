@@ -13,6 +13,7 @@ class UpdateUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        /** @var User $user */
         $user = $this->route('user');
 
         return $this->user()?->can('users.edit') === true
@@ -24,6 +25,7 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var User $user */
         $user = $this->route('user');
 
         return [
@@ -43,9 +45,13 @@ class UpdateUserRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<int, callable(Validator): void>
+     */
     public function after(): array
     {
         return [function (Validator $validator): void {
+            /** @var User $user */
             $user = $this->route('user');
 
             if ($user->hasRole('admin') && $this->exists('roles')
