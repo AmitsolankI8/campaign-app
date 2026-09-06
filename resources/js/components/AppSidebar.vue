@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { LayoutGrid, UsersRound } from '@lucide/vue';
+import { LayoutGrid, Settings, UsersRound } from '@lucide/vue';
 import { computed } from 'vue';
+import { edit as systemSettingsEdit } from '@/actions/App/Http/Controllers/Settings/SystemSettingsController';
 import { index as rolesIndex } from '@/actions/App/Http/Controllers/UserManagement/RoleController';
 import { index as usersIndex } from '@/actions/App/Http/Controllers/UserManagement/UserController';
 import AppLogo from '@/components/AppLogo.vue';
@@ -45,6 +46,19 @@ const mainNavItems = computed<NavItem[]>(() => [
                 title: 'Roles',
                 href: rolesIndex(),
                 isVisible: hasPermissions(['roles.view']),
+            },
+        ],
+    },
+    {
+        title: 'Settings',
+        href: systemSettingsEdit(),
+        icon: Settings,
+        isVisible: hasPermissions(['system-settings.view']),
+        children: [
+            {
+                title: 'System',
+                href: systemSettingsEdit(),
+                isVisible: hasPermissions(['system-settings.view']),
             },
         ],
     },
