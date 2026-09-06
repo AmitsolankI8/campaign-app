@@ -71,7 +71,7 @@ const submit = () => {
 </script>
 
 <template>
-    <form class="space-y-6" @submit.prevent="submit">
+    <form novalidate class="space-y-6" @submit.prevent="submit">
         <Card>
             <CardHeader>
                 <CardTitle>{{
@@ -84,23 +84,23 @@ const submit = () => {
             </CardHeader>
             <CardContent class="grid gap-6 md:grid-cols-2">
                 <div class="grid gap-2">
-                    <Label for="display_name">Display name</Label>
+                    <Label for="display_name" required>Display name</Label>
                     <Input
                         id="display_name"
+                        aria-required="true"
                         v-model="form.display_name"
-                        required
                     />
                     <InputError :message="form.errors.display_name" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="name">Slug</Label>
+                    <Label for="name" required>Slug</Label>
                     <Input
                         id="name"
+                        aria-required="true"
                         v-model="form.name"
                         :disabled="role?.name === 'admin'"
                         placeholder="support-manager"
-                        required
                     />
                     <InputError :message="form.errors.name" />
                 </div>

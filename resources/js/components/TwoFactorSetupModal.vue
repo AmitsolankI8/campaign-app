@@ -18,6 +18,7 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useAppearance } from '@/composables/useAppearance';
 import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
@@ -238,6 +239,7 @@ watch(
 
                 <template v-else>
                     <Form
+                        novalidate
                         v-bind="confirm.form()"
                         error-bag="confirmTwoFactorAuthentication"
                         reset-on-error
@@ -253,8 +255,12 @@ watch(
                             <div
                                 class="flex w-full flex-col items-center justify-center space-y-3 py-2"
                             >
+                                <Label for="otp" required
+                                    >Authentication code</Label
+                                >
                                 <InputOTP
                                     id="otp"
+                                    aria-required="true"
                                     v-model="code"
                                     :maxlength="6"
                                     :disabled="processing"

@@ -90,7 +90,7 @@ const submit = () => {
 </script>
 
 <template>
-    <form class="space-y-6" @submit.prevent="submit">
+    <form novalidate class="space-y-6" @submit.prevent="submit">
         <Card>
             <CardHeader>
                 <CardTitle>{{
@@ -102,40 +102,40 @@ const submit = () => {
             </CardHeader>
             <CardContent class="grid gap-6 md:grid-cols-2">
                 <div class="grid gap-2">
-                    <Label for="first_name">First name</Label>
+                    <Label for="first_name" required>First name</Label>
                     <Input
                         id="first_name"
+                        aria-required="true"
                         v-model="form.first_name"
-                        required
                         autocomplete="given-name"
                     />
                     <InputError :message="form.errors.first_name" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="last_name">Last name</Label>
+                    <Label for="last_name" required>Last name</Label>
                     <Input
                         id="last_name"
+                        aria-required="true"
                         v-model="form.last_name"
-                        required
                         autocomplete="family-name"
                     />
                     <InputError :message="form.errors.last_name" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="email">Email</Label>
+                    <Label for="email" required>Email</Label>
                     <Input
                         id="email"
+                        aria-required="true"
                         v-model="form.email"
                         type="email"
-                        required
                     />
                     <InputError :message="form.errors.email" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password">
+                    <Label for="password" :required="!isEditing">
                         Password
                         <span v-if="isEditing" class="text-muted-foreground">
                             (leave blank to keep current)
@@ -143,19 +143,23 @@ const submit = () => {
                     </Label>
                     <PasswordInput
                         id="password"
+                        :aria-required="!isEditing"
                         v-model="form.password"
-                        :required="!isEditing"
                         autocomplete="new-password"
                     />
                     <InputError :message="form.errors.password" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password_confirmation">Confirm password</Label>
+                    <Label
+                        for="password_confirmation"
+                        :required="!isEditing || Boolean(form.password)"
+                        >Confirm password</Label
+                    >
                     <PasswordInput
                         id="password_confirmation"
+                        :aria-required="!isEditing || Boolean(form.password)"
                         v-model="form.password_confirmation"
-                        :required="!isEditing"
                         autocomplete="new-password"
                     />
                     <InputError :message="form.errors.password_confirmation" />

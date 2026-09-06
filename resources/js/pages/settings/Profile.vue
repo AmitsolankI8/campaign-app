@@ -41,19 +41,20 @@ const user = computed(() => page.props.auth.user);
         />
 
         <Form
+            novalidate
             v-bind="ProfileController.update.form()"
             class="space-y-6"
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-6 md:grid-cols-2">
                 <div class="grid gap-2">
-                    <Label for="first_name">First name</Label>
+                    <Label for="first_name" required>First name</Label>
                     <Input
                         id="first_name"
+                        aria-required="true"
                         class="mt-1 block w-full"
                         name="first_name"
                         :default-value="user.first_name"
-                        required
                         autocomplete="given-name"
                         placeholder="First name"
                     />
@@ -61,13 +62,13 @@ const user = computed(() => page.props.auth.user);
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="last_name">Last name</Label>
+                    <Label for="last_name" required>Last name</Label>
                     <Input
                         id="last_name"
+                        aria-required="true"
                         class="mt-1 block w-full"
                         name="last_name"
                         :default-value="user.last_name"
-                        required
                         autocomplete="family-name"
                         placeholder="Last name"
                     />
@@ -76,14 +77,14 @@ const user = computed(() => page.props.auth.user);
             </div>
 
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email" required>Email address</Label>
                 <Input
                     id="email"
+                    aria-required="true"
                     type="email"
                     class="mt-1 block w-full"
                     name="email"
                     :default-value="user.email"
-                    required
                     autocomplete="username"
                     placeholder="Email address"
                 />

@@ -45,6 +45,7 @@ const passwordInput = useTemplateRef('passwordInput');
                 </DialogTrigger>
                 <DialogContent>
                     <Form
+                        novalidate
                         v-bind="ProfileController.destroy.form()"
                         reset-on-success
                         @error="() => passwordInput?.focus()"
@@ -69,11 +70,10 @@ const passwordInput = useTemplateRef('passwordInput');
                         </DialogHeader>
 
                         <div class="grid gap-2">
-                            <Label for="password" class="sr-only"
-                                >Password</Label
-                            >
+                            <Label for="password" required>Password</Label>
                             <PasswordInput
                                 id="password"
+                                aria-required="true"
                                 name="password"
                                 ref="passwordInput"
                                 placeholder="Password"

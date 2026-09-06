@@ -9,6 +9,7 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { Label } from '@/components/ui/label';
 import { store } from '@/routes/two-factor/login';
 import type { TwoFactorConfigContent } from '@/types';
 
@@ -53,6 +54,7 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
     <div class="space-y-6">
         <template v-if="!showRecoveryInput">
             <Form
+                novalidate
                 v-bind="store.form()"
                 class="space-y-4"
                 reset-on-error
@@ -63,9 +65,13 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                 <div
                     class="flex flex-col items-center justify-center space-y-3 text-center"
                 >
-                    <div class="flex w-full items-center justify-center">
+                    <div
+                        class="flex w-full flex-col items-center justify-center gap-3"
+                    >
+                        <Label for="otp" required>Authentication code</Label>
                         <InputOTP
                             id="otp"
+                            aria-required="true"
                             v-model="code"
                             :maxlength="6"
                             :disabled="processing"
@@ -100,17 +106,20 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
 
         <template v-else>
             <Form
+                novalidate
                 v-bind="store.form()"
                 class="space-y-4"
                 reset-on-error
                 #default="{ errors, processing, clearErrors }"
             >
+                <Label for="recovery_code" required>Recovery code</Label>
                 <Input
+                    id="recovery_code"
+                    aria-required="true"
                     name="recovery_code"
                     type="text"
                     placeholder="Enter recovery code"
                     :autofocus="showRecoveryInput"
-                    required
                 />
                 <InputError :message="errors.recovery_code" />
                 <Button type="submit" class="w-full" :disabled="processing"

@@ -37,6 +37,7 @@ defineProps<{
     <PasskeyVerify />
 
     <Form
+        novalidate
         v-bind="store.form()"
         :reset-on-success="['password']"
         v-slot="{ errors, processing }"
@@ -44,12 +45,12 @@ defineProps<{
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email" required>Email address</Label>
                 <Input
                     id="email"
+                    aria-required="true"
                     type="email"
                     name="email"
-                    required
                     autofocus
                     :tabindex="1"
                     autocomplete="email"
@@ -60,7 +61,7 @@ defineProps<{
 
             <div class="grid gap-2">
                 <div class="flex items-center justify-between">
-                    <Label for="password">Password</Label>
+                    <Label for="password" required>Password</Label>
                     <TextLink
                         v-if="canResetPassword"
                         :href="request()"
@@ -72,8 +73,8 @@ defineProps<{
                 </div>
                 <PasswordInput
                     id="password"
+                    aria-required="true"
                     name="password"
-                    required
                     :tabindex="2"
                     autocomplete="current-password"
                     placeholder="Password"

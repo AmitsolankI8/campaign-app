@@ -29,6 +29,7 @@ const inputEmail = ref(props.email);
     <Head title="Reset password" />
 
     <Form
+        novalidate
         v-bind="update.form()"
         :transform="(data) => ({ ...data, token, email })"
         :reset-on-success="['password', 'password_confirmation']"
@@ -36,9 +37,10 @@ const inputEmail = ref(props.email);
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="email">Email</Label>
+                <Label for="email" required>Email</Label>
                 <Input
                     id="email"
+                    aria-required="true"
                     type="email"
                     name="email"
                     autocomplete="email"
@@ -50,9 +52,10 @@ const inputEmail = ref(props.email);
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">Password</Label>
+                <Label for="password" required>Password</Label>
                 <PasswordInput
                     id="password"
+                    aria-required="true"
                     name="password"
                     autocomplete="new-password"
                     class="mt-1 block w-full"
@@ -64,9 +67,12 @@ const inputEmail = ref(props.email);
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation"> Confirm password </Label>
+                <Label for="password_confirmation" required>
+                    Confirm password
+                </Label>
                 <PasswordInput
                     id="password_confirmation"
+                    aria-required="true"
                     name="password_confirmation"
                     autocomplete="new-password"
                     class="mt-1 block w-full"

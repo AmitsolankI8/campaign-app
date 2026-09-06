@@ -50,6 +50,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                     <ShieldCheck />Continue setup
                 </Button>
                 <Form
+                    novalidate
                     v-else
                     v-bind="enable.form()"
                     @success="showSetupModal = true"
@@ -70,7 +71,11 @@ onUnmounted(() => clearTwoFactorAuthData());
             </p>
 
             <div class="relative inline">
-                <Form v-bind="disable.form()" #default="{ processing }">
+                <Form
+                    novalidate
+                    v-bind="disable.form()"
+                    #default="{ processing }"
+                >
                     <Button
                         variant="destructive"
                         type="submit"

@@ -35,18 +35,19 @@ defineOptions({
     />
 
     <Form
+        novalidate
         v-bind="store.form()"
         reset-on-success
         v-slot="{ errors, processing }"
     >
         <div class="space-y-6">
             <div class="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label for="password" required>Password</Label>
                 <PasswordInput
                     id="password"
+                    aria-required="true"
                     name="password"
                     class="mt-1 block w-full"
-                    required
                     autocomplete="current-password"
                     autofocus
                 />

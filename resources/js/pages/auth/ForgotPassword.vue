@@ -32,11 +32,12 @@ defineProps<{
     </div>
 
     <div class="space-y-6">
-        <Form v-bind="email.form()" v-slot="{ errors, processing }">
+        <Form novalidate v-bind="email.form()" v-slot="{ errors, processing }">
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email" required>Email address</Label>
                 <Input
                     id="email"
+                    aria-required="true"
                     type="email"
                     name="email"
                     autocomplete="off"

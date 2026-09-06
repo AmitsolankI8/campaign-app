@@ -44,6 +44,7 @@ defineOptions({
         />
 
         <Form
+            novalidate
             v-bind="SecurityController.update.form()"
             :options="{
                 preserveScroll: true,
@@ -58,9 +59,10 @@ defineOptions({
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-2">
-                <Label for="current_password">Current password</Label>
+                <Label for="current_password" required>Current password</Label>
                 <PasswordInput
                     id="current_password"
+                    aria-required="true"
                     name="current_password"
                     class="mt-1 block w-full"
                     autocomplete="current-password"
@@ -70,9 +72,10 @@ defineOptions({
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">New password</Label>
+                <Label for="password" required>New password</Label>
                 <PasswordInput
                     id="password"
+                    aria-required="true"
                     name="password"
                     class="mt-1 block w-full"
                     autocomplete="new-password"
@@ -83,9 +86,12 @@ defineOptions({
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation">Confirm password</Label>
+                <Label for="password_confirmation" required
+                    >Confirm password</Label
+                >
                 <PasswordInput
                     id="password_confirmation"
+                    aria-required="true"
                     name="password_confirmation"
                     class="mt-1 block w-full"
                     autocomplete="new-password"
