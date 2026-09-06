@@ -9,7 +9,9 @@ export function usePermissions() {
     ): boolean => {
         const allowedPermissions = page.props.auth?.permissions ?? [];
 
-        if (page.props.auth?.user?.roles?.some((role) => role.name === 'admin')) {
+        if (
+            page.props.auth?.user?.roles?.some((role) => role.name === 'admin')
+        ) {
             return true;
         }
 
