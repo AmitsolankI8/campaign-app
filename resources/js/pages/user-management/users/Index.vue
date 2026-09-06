@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 
 type UserRow = {
     id: number;
-    name: string;
+    full_name: string;
     email: string;
     created_at: string | null;
     roles: string[];
@@ -34,7 +34,7 @@ defineOptions({
 });
 
 const deleteUser = (user: UserRow) => {
-    if (!window.confirm(`Delete ${user.name}?`)) {
+    if (!window.confirm(`Delete ${user.full_name}?`)) {
         return;
     }
 
@@ -50,7 +50,7 @@ const deleteUser = (user: UserRow) => {
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">Users</h1>
                 <p class="text-sm text-muted-foreground">
-                    Create users and assign roles or direct permissions.
+                    Create users and assign their roles.
                 </p>
             </div>
             <Button as-child>
@@ -84,7 +84,9 @@ const deleteUser = (user: UserRow) => {
                         </td>
                     </tr>
                     <tr v-for="user in users" :key="user.id" class="border-t">
-                        <td class="px-4 py-3 font-medium">{{ user.name }}</td>
+                        <td class="px-4 py-3 font-medium">
+                            {{ user.full_name }}
+                        </td>
                         <td class="px-4 py-3 text-muted-foreground">
                             {{ user.email }}
                         </td>

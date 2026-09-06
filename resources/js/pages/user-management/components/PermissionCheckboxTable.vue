@@ -39,10 +39,10 @@ const emit = defineEmits<{
                         </td>
                         <td class="px-4 py-3">
                             <div class="font-medium">
-                                {{ permission.label }}
+                                {{ permission.display_name }}
                             </div>
                             <div class="text-xs text-muted-foreground">
-                                {{ permission.name }}
+                                {{ permission.short_note }}
                             </div>
                         </td>
                         <td class="px-4 py-3 text-center">

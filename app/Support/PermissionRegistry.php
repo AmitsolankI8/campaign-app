@@ -7,22 +7,22 @@ use Illuminate\Support\Arr;
 class PermissionRegistry
 {
     /**
-     * @return array<string, array<int, array{name: string, label: string}>>
+     * @return array<string, array<int, array{name: string, display_name: string, short_note: string}>>
      */
     public static function groups(): array
     {
         return [
             'Users' => [
-                ['name' => 'users.view', 'label' => 'View users'],
-                ['name' => 'users.create', 'label' => 'Create users'],
-                ['name' => 'users.edit', 'label' => 'Edit users'],
-                ['name' => 'users.delete', 'label' => 'Delete users'],
+                ['name' => 'users.view', 'display_name' => 'View users', 'short_note' => 'View the user list and user details.'],
+                ['name' => 'users.create', 'display_name' => 'Create users', 'short_note' => 'Create new user accounts.'],
+                ['name' => 'users.edit', 'display_name' => 'Edit users', 'short_note' => 'Update user details and role assignments.'],
+                ['name' => 'users.delete', 'display_name' => 'Delete users', 'short_note' => 'Delete user accounts.'],
             ],
             'Roles' => [
-                ['name' => 'roles.view', 'label' => 'View roles'],
-                ['name' => 'roles.create', 'label' => 'Create roles'],
-                ['name' => 'roles.edit', 'label' => 'Edit roles'],
-                ['name' => 'roles.delete', 'label' => 'Delete roles'],
+                ['name' => 'roles.view', 'display_name' => 'View roles', 'short_note' => 'View roles and their assignments.'],
+                ['name' => 'roles.create', 'display_name' => 'Create roles', 'short_note' => 'Create roles and assign permissions.'],
+                ['name' => 'roles.edit', 'display_name' => 'Edit roles', 'short_note' => 'Update roles and permission assignments.'],
+                ['name' => 'roles.delete', 'display_name' => 'Delete roles', 'short_note' => 'Delete roles that are not assigned to users.'],
             ],
         ];
     }

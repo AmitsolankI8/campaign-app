@@ -5,13 +5,12 @@ namespace App\Http\Controllers\UserManagement;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserManagement\StoreUserRequest;
 use App\Http\Requests\UserManagement\UpdateUserRequest;
+use App\Models\Role;
 use App\Models\User;
-use App\Support\PermissionRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -21,15 +20,15 @@ class UserController extends Controller
 
         return Inertia::render('user-management/users/Index', [
             'users' => User::query()
-                ->with('roles:id,name')
+                ->with('roles:id,name,display_name')
                 ->latest()
-                ->get(['id', 'name', 'email', 'created_at'])
+                ->get(['id', 'first_name', 'last_name', 'email', 'created_at'])
                 ->map(fn (User $user) => [
                     'id' => $user->id,
-                    'name' => $user->name,
+                    'full_name' => $user->full_name,
                     'email' => $user->email,
                     'created_at' => $user->created_at?->toDateString(),
-                    'roles' => $user->roles->pluck('name')->values(),
+                    'roles' => $user->roles->pluck('display_name')->values(),
                 ]),
         ]);
     }
@@ -40,15 +39,13 @@ class UserController extends Controller
 
         return Inertia::render('user-management/users/Create', [
             'roles' => $this->roles(),
-            'permissionGroups' => PermissionRegistry::groups(),
         ]);
     }
 
     public function store(StoreUserRequest $request): RedirectResponse
     {
-        $user = User::create($request->safe()->only(['name', 'email', 'password']));
+        $user = User::create($request->safe()->only(['first_name', 'last_name', 'email', 'password']));
         $user->syncRoles($request->validated('roles', []));
-        $user->syncPermissions($request->validated('permissions', []));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('User created.')]);
 
@@ -62,19 +59,18 @@ class UserController extends Controller
         return Inertia::render('user-management/users/Edit', [
             'managedUser' => [
                 'id' => $user->id,
-                'name' => $user->name,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
                 'email' => $user->email,
                 'roles' => $user->roles()->pluck('name'),
-                'permissions' => $user->permissions()->pluck('name'),
             ],
             'roles' => $this->roles(),
-            'permissionGroups' => PermissionRegistry::groups(),
         ]);
     }
 
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
-        $user->fill($request->safe()->only(['name', 'email']));
+        $user->fill($request->safe()->only(['first_name', 'last_name', 'email']));
 
         if ($request->filled('password')) {
             $user->password = $request->validated('password');
@@ -82,7 +78,6 @@ class UserController extends Controller
 
         $user->save();
         $user->syncRoles($request->validated('roles', []));
-        $user->syncPermissions($request->validated('permissions', []));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('User updated.')]);
 
@@ -103,14 +98,17 @@ class UserController extends Controller
     }
 
     /**
-     * @return array<int, array{name: string}>
+     * @return array<int, array{name: string, display_name: string}>
      */
     private function roles(): array
     {
         return Role::query()
-            ->orderBy('name')
-            ->get(['name'])
-            ->map(fn (Role $role) => ['name' => $role->name])
+            ->orderBy('display_name')
+            ->get(['name', 'display_name'])
+            ->map(fn (Role $role) => [
+                'name' => $role->name,
+                'display_name' => $role->display_name,
+            ])
             ->all();
     }
 }

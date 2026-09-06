@@ -7,6 +7,8 @@ import RoleForm from './Form.vue';
 type ManagedRole = {
     id: number;
     name: string;
+    display_name: string;
+    short_note: string | null;
     permissions: string[];
 };
 
@@ -34,7 +36,7 @@ defineOptions({
         <div>
             <h1 class="text-2xl font-semibold tracking-tight">Edit role</h1>
             <p class="text-sm text-muted-foreground">
-                Update the role name and permission assignment.
+                Update role details and permission assignment.
             </p>
         </div>
 

@@ -5,12 +5,12 @@ namespace App\Http\Controllers\UserManagement;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserManagement\StoreRoleRequest;
 use App\Http\Requests\UserManagement\UpdateRoleRequest;
+use App\Models\Role;
 use App\Support\PermissionRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
@@ -21,14 +21,14 @@ class RoleController extends Controller
         return Inertia::render('user-management/roles/Index', [
             'roles' => Role::query()
                 ->withCount('users')
-                ->with('permissions:id,name')
-                ->orderBy('name')
-                ->get(['id', 'name'])
+                ->orderBy('display_name')
+                ->get(['id', 'name', 'display_name', 'short_note'])
                 ->map(fn (Role $role) => [
                     'id' => $role->id,
                     'name' => $role->name,
+                    'display_name' => $role->display_name,
+                    'short_note' => $role->short_note,
                     'users_count' => $role->users_count,
-                    'permissions' => $role->permissions->pluck('name')->values(),
                 ]),
         ]);
     }
@@ -44,7 +44,7 @@ class RoleController extends Controller
 
     public function store(StoreRoleRequest $request): RedirectResponse
     {
-        $role = Role::create($request->safe()->only(['name']));
+        $role = Role::create($request->safe()->only(['name', 'display_name', 'short_note']));
         $role->syncPermissions($request->validated('permissions', []));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Role created.')]);
@@ -60,6 +60,8 @@ class RoleController extends Controller
             'role' => [
                 'id' => $role->id,
                 'name' => $role->name,
+                'display_name' => $role->display_name,
+                'short_note' => $role->short_note,
                 'permissions' => $role->permissions()->pluck('name'),
             ],
             'permissionGroups' => PermissionRegistry::groups(),
@@ -68,7 +70,7 @@ class RoleController extends Controller
 
     public function update(UpdateRoleRequest $request, Role $role): RedirectResponse
     {
-        $role->update($request->safe()->only(['name']));
+        $role->update($request->safe()->only(['name', 'display_name', 'short_note']));
         $role->syncPermissions($request->validated('permissions', []));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Role updated.')]);

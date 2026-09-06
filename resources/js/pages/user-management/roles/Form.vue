@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
+import { Link, useForm } from '@inertiajs/vue3';
 import {
     index as rolesIndex,
     store,
@@ -23,6 +23,8 @@ import type { PermissionGroups } from '../types';
 type ManagedRole = {
     id: number;
     name: string;
+    display_name: string;
+    short_note: string | null;
     permissions: string[];
 };
 
@@ -34,7 +36,9 @@ const props = defineProps<{
 const isEditing = Boolean(props.role);
 
 const form = useForm({
+    display_name: props.role?.display_name ?? '',
     name: props.role?.name ?? '',
+    short_note: props.role?.short_note ?? '',
     permissions: props.role?.permissions ?? [],
 });
 
@@ -70,10 +74,33 @@ const submit = () => {
                     seeders.
                 </CardDescription>
             </CardHeader>
-            <CardContent class="grid gap-2">
-                <Label for="name">Name</Label>
-                <Input id="name" v-model="form.name" required />
-                <InputError :message="form.errors.name" />
+            <CardContent class="grid gap-6 md:grid-cols-2">
+                <div class="grid gap-2">
+                    <Label for="display_name">Display name</Label>
+                    <Input
+                        id="display_name"
+                        v-model="form.display_name"
+                        required
+                    />
+                    <InputError :message="form.errors.display_name" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="name">Slug</Label>
+                    <Input
+                        id="name"
+                        v-model="form.name"
+                        placeholder="support-manager"
+                        required
+                    />
+                    <InputError :message="form.errors.name" />
+                </div>
+
+                <div class="grid gap-2 md:col-span-2">
+                    <Label for="short_note">Short note</Label>
+                    <Input id="short_note" v-model="form.short_note" />
+                    <InputError :message="form.errors.short_note" />
+                </div>
             </CardContent>
         </Card>
 
@@ -96,7 +123,7 @@ const submit = () => {
 
         <div class="flex items-center justify-end gap-3">
             <Button type="button" variant="outline" as-child>
-                <a :href="rolesIndex.url()">Cancel</a>
+                <Link :href="rolesIndex.url()">Cancel</Link>
             </Button>
             <Button type="submit" :disabled="form.processing">
                 <Spinner v-if="form.processing" />

@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { create } from '@/actions/App/Http/Controllers/UserManagement/UserController';
-import type { PermissionGroups, RoleOption } from '../types';
+import type { RoleOption } from '../types';
 import UserForm from './Form.vue';
 
 defineProps<{
     roles: RoleOption[];
-    permissionGroups: PermissionGroups;
 }>();
 
 defineOptions({
@@ -32,6 +31,6 @@ defineOptions({
             </p>
         </div>
 
-        <UserForm :roles="roles" :permission-groups="permissionGroups" />
+        <UserForm :roles="roles" />
     </div>
 </template>

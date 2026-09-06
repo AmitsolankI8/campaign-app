@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
+import { Link, useForm } from '@inertiajs/vue3';
 import {
     index as usersIndex,
     store,
@@ -19,42 +19,36 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import PermissionCheckboxTable from '../components/PermissionCheckboxTable.vue';
-import type { PermissionGroups, RoleOption } from '../types';
+import type { RoleOption } from '../types';
 
 type ManagedUser = {
     id: number;
-    name: string;
+    first_name: string;
+    last_name: string;
     email: string;
     roles: string[];
-    permissions: string[];
 };
 
 const props = defineProps<{
     managedUser?: ManagedUser;
     roles: RoleOption[];
-    permissionGroups: PermissionGroups;
 }>();
 
 const isEditing = Boolean(props.managedUser);
 
 const form = useForm({
-    name: props.managedUser?.name ?? '',
+    first_name: props.managedUser?.first_name ?? '',
+    last_name: props.managedUser?.last_name ?? '',
     email: props.managedUser?.email ?? '',
     password: '',
     password_confirmation: '',
     roles: props.managedUser?.roles ?? [],
-    permissions: props.managedUser?.permissions ?? [],
 });
 
-const toggleValue = (
-    field: 'roles' | 'permissions',
-    value: string,
-    checked: boolean,
-) => {
-    form[field] = checked
-        ? [...form[field], value]
-        : form[field].filter((item) => item !== value);
+const toggleRole = (role: string, checked: boolean) => {
+    form.roles = checked
+        ? [...form.roles, role]
+        : form.roles.filter((item) => item !== role);
 };
 
 const submit = () => {
@@ -82,15 +76,30 @@ const submit = () => {
                     isEditing ? 'Edit user' : 'Create user'
                 }}</CardTitle>
                 <CardDescription>
-                    Manage the user profile, role assignment, and direct
-                    permissions.
+                    Manage the user profile and role assignment.
                 </CardDescription>
             </CardHeader>
             <CardContent class="grid gap-6 md:grid-cols-2">
                 <div class="grid gap-2">
-                    <Label for="name">Name</Label>
-                    <Input id="name" v-model="form.name" required />
-                    <InputError :message="form.errors.name" />
+                    <Label for="first_name">First name</Label>
+                    <Input
+                        id="first_name"
+                        v-model="form.first_name"
+                        required
+                        autocomplete="given-name"
+                    />
+                    <InputError :message="form.errors.first_name" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="last_name">Last name</Label>
+                    <Input
+                        id="last_name"
+                        v-model="form.last_name"
+                        required
+                        autocomplete="family-name"
+                    />
+                    <InputError :message="form.errors.last_name" />
                 </div>
 
                 <div class="grid gap-2">
@@ -149,11 +158,10 @@ const submit = () => {
                     <Checkbox
                         :model-value="form.roles.includes(role.name)"
                         @update:model-value="
-                            (value) =>
-                                toggleValue('roles', role.name, value === true)
+                            (value) => toggleRole(role.name, value === true)
                         "
                     />
-                    <span>{{ role.name }}</span>
+                    <span>{{ role.display_name }}</span>
                 </Label>
                 <InputError
                     :message="form.errors.roles"
@@ -162,30 +170,9 @@ const submit = () => {
             </CardContent>
         </Card>
 
-        <Card>
-            <CardHeader>
-                <CardTitle>Direct permissions</CardTitle>
-                <CardDescription>
-                    Optional user-specific permissions from the static seeded
-                    permission list.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <PermissionCheckboxTable
-                    :permission-groups="permissionGroups"
-                    :selected="form.permissions"
-                    @toggle="
-                        (permission, checked) =>
-                            toggleValue('permissions', permission, checked)
-                    "
-                />
-                <InputError :message="form.errors.permissions" class="mt-2" />
-            </CardContent>
-        </Card>
-
         <div class="flex items-center justify-end gap-3">
             <Button type="button" variant="outline" as-child>
-                <a :href="usersIndex.url()">Cancel</a>
+                <Link :href="usersIndex.url()">Cancel</Link>
             </Button>
             <Button type="submit" :disabled="form.processing">
                 <Spinner v-if="form.processing" />

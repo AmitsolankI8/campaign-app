@@ -2,11 +2,10 @@
 
 namespace App\Http\Requests\UserManagement;
 
-use App\Support\PermissionRegistry;
+use App\Models\Role;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
-use Spatie\Permission\Models\Role;
 
 class StoreUserRequest extends FormRequest
 {
@@ -21,13 +20,12 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'confirmed', Password::defaults()],
             'roles' => ['array'],
             'roles.*' => ['string', Rule::exists((new Role)->getTable(), 'name')],
-            'permissions' => ['array'],
-            'permissions.*' => ['string', Rule::in(PermissionRegistry::names())],
         ];
     }
 }

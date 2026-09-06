@@ -1,5 +1,23 @@
 # Eloquent Best Practices
 
+## Define Model Configuration as Array Properties
+
+Always define `$appends`, `$fillable`, and `$hidden` as protected array properties inside the model class. Do not use the class-level PHP attributes `#[Appends(...)]`, `#[Fillable(...)]`, or `#[Hidden(...)]`, or import their attribute classes. Preserve the existing array values when converting models to this convention.
+
+```php
+class User extends Authenticatable
+{
+    /** @var list<string> */
+    protected $appends = ['full_name'];
+
+    /** @var list<string> */
+    protected $fillable = ['first_name', 'last_name', 'email', 'password'];
+
+    /** @var list<string> */
+    protected $hidden = ['password', 'remember_token'];
+}
+```
+
 ## Use Correct Relationship Types
 
 Use `hasMany`, `belongsTo`, `morphMany`, etc. with proper return type hints.

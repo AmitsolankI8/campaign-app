@@ -1,21 +1,20 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { index } from '@/actions/App/Http/Controllers/UserManagement/UserController';
-import type { PermissionGroups, RoleOption } from '../types';
+import type { RoleOption } from '../types';
 import UserForm from './Form.vue';
 
 type ManagedUser = {
     id: number;
-    name: string;
+    first_name: string;
+    last_name: string;
     email: string;
     roles: string[];
-    permissions: string[];
 };
 
 defineProps<{
     managedUser: ManagedUser;
     roles: RoleOption[];
-    permissionGroups: PermissionGroups;
 }>();
 
 defineOptions({
@@ -37,14 +36,10 @@ defineOptions({
         <div>
             <h1 class="text-2xl font-semibold tracking-tight">Edit user</h1>
             <p class="text-sm text-muted-foreground">
-                Update profile, role assignment, and direct permissions.
+                Update the user profile and role assignment.
             </p>
         </div>
 
-        <UserForm
-            :managed-user="managedUser"
-            :roles="roles"
-            :permission-groups="permissionGroups"
-        />
+        <UserForm :managed-user="managedUser" :roles="roles" />
     </div>
 </template>

@@ -2,12 +2,11 @@
 
 namespace App\Http\Requests\UserManagement;
 
+use App\Models\Role;
 use App\Models\User;
-use App\Support\PermissionRegistry;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
-use Spatie\Permission\Models\Role;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -24,7 +23,8 @@ class UpdateUserRequest extends FormRequest
         $user = $this->route('user');
 
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
                 'string',
@@ -36,8 +36,6 @@ class UpdateUserRequest extends FormRequest
             'password' => ['nullable', 'confirmed', Password::defaults()],
             'roles' => ['array'],
             'roles.*' => ['string', Rule::exists((new Role)->getTable(), 'name')],
-            'permissions' => ['array'],
-            'permissions.*' => ['string', Rule::in(PermissionRegistry::names())],
         ];
     }
 }

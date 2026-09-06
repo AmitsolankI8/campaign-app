@@ -7,14 +7,14 @@ import {
     edit,
     index,
 } from '@/actions/App/Http/Controllers/UserManagement/RoleController';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 type RoleRow = {
     id: number;
     name: string;
+    display_name: string;
+    short_note: string | null;
     users_count: number;
-    permissions: string[];
 };
 
 defineProps<{
@@ -33,7 +33,7 @@ defineOptions({
 });
 
 const deleteRole = (role: RoleRow) => {
-    if (!window.confirm(`Delete ${role.name}?`)) {
+    if (!window.confirm(`Delete ${role.display_name}?`)) {
         return;
     }
 
@@ -64,9 +64,9 @@ const deleteRole = (role: RoleRow) => {
             <table class="w-full text-sm">
                 <thead class="bg-muted/50 text-left">
                     <tr>
-                        <th class="px-4 py-3 font-medium">Name</th>
+                        <th class="px-4 py-3 font-medium">Role</th>
+                        <th class="px-4 py-3 font-medium">Short note</th>
                         <th class="px-4 py-3 font-medium">Users</th>
-                        <th class="px-4 py-3 font-medium">Permissions</th>
                         <th class="w-40 px-4 py-3 text-right font-medium">
                             Actions
                         </th>
@@ -82,29 +82,25 @@ const deleteRole = (role: RoleRow) => {
                         </td>
                     </tr>
                     <tr v-for="role in roles" :key="role.id" class="border-t">
-                        <td class="px-4 py-3 font-medium">{{ role.name }}</td>
+                        <td class="px-4 py-3">
+                            <div class="font-medium">
+                                {{ role.display_name }}
+                            </div>
+                            <div class="text-xs text-muted-foreground">
+                                {{ role.name }}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-muted-foreground">
+                            {{ role.short_note ?? '—' }}
+                        </td>
                         <td class="px-4 py-3 text-muted-foreground">
                             {{ role.users_count }}
                         </td>
                         <td class="px-4 py-3">
-                            <div class="flex flex-wrap gap-2">
-                                <Badge
-                                    v-for="permission in role.permissions"
-                                    :key="permission"
-                                    variant="secondary"
-                                >
-                                    {{ permission }}
-                                </Badge>
-                                <span
-                                    v-if="role.permissions.length === 0"
-                                    class="text-muted-foreground"
-                                >
-                                    No permissions
-                                </span>
-                            </div>
-                        </td>
-                        <td class="px-4 py-3">
-                            <div class="flex justify-end gap-2">
+                            <div
+                                v-if="role.name !== 'admin'"
+                                class="flex justify-end gap-2"
+                            >
                                 <Button size="sm" variant="outline" as-child>
                                     <Link :href="edit.url(role.id)">
                                         <Pencil class="size-4" />

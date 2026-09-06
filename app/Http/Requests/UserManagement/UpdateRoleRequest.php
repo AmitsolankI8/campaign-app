@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\UserManagement;
 
+use App\Models\Role;
 use App\Support\PermissionRegistry;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Spatie\Permission\Models\Role;
 
 class UpdateRoleRequest extends FormRequest
 {
@@ -22,7 +22,15 @@ class UpdateRoleRequest extends FormRequest
         $role = $this->route('role');
 
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique((new Role)->getTable(), 'name')->ignore($role)],
+            'display_name' => ['required', 'string', 'max:255'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                Rule::unique((new Role)->getTable(), 'name')->ignore($role),
+            ],
+            'short_note' => ['nullable', 'string', 'max:255'],
             'permissions' => ['array'],
             'permissions.*' => ['string', Rule::in(PermissionRegistry::names())],
         ];
