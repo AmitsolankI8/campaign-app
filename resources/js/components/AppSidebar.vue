@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid, UsersRound } from '@lucide/vue';
+import { LayoutGrid, UsersRound } from '@lucide/vue';
+import { computed } from 'vue';
 import { index as rolesIndex } from '@/actions/App/Http/Controllers/UserManagement/RoleController';
 import { index as usersIndex } from '@/actions/App/Http/Controllers/UserManagement/UserController';
 import AppLogo from '@/components/AppLogo.vue';
@@ -16,31 +17,38 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const { hasPermissions } = usePermissions();
+
+const mainNavItems = computed<NavItem[]>(() => [
     {
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+        isVisible: true,
     },
     {
         title: 'User Management',
         href: usersIndex(),
         icon: UsersRound,
+        isVisible: hasPermissions(['users.view', 'roles.view']),
         children: [
             {
                 title: 'Users',
                 href: usersIndex(),
+                isVisible: hasPermissions(['users.view']),
             },
             {
                 title: 'Roles',
                 href: rolesIndex(),
+                isVisible: hasPermissions(['roles.view']),
             },
         ],
     },
-];
+]);
 
 const footerNavItems: NavItem[] = [];
 </script>

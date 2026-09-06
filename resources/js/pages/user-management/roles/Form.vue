@@ -17,6 +17,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { usePermissions } from '@/composables/usePermissions';
+import { dashboard } from '@/routes';
 import PermissionCheckboxTable from '../components/PermissionCheckboxTable.vue';
 import type { PermissionGroups } from '../types';
 
@@ -32,6 +34,8 @@ const props = defineProps<{
     role?: ManagedRole;
     permissionGroups: PermissionGroups;
 }>();
+
+const { hasPermissions } = usePermissions();
 
 const isEditing = Boolean(props.role);
 
@@ -49,6 +53,10 @@ const togglePermission = (permission: string, checked: boolean) => {
 };
 
 const submit = () => {
+    if (!hasPermissions([isEditing ? 'roles.edit' : 'roles.create'])) {
+        return;
+    }
+
     if (props.role) {
         form.put(update.url(props.role.id), { preserveScroll: true });
 
@@ -123,9 +131,22 @@ const submit = () => {
 
         <div class="flex items-center justify-end gap-3">
             <Button type="button" variant="outline" as-child>
-                <Link :href="rolesIndex.url()">Cancel</Link>
+                <Link
+                    :href="
+                        hasPermissions(['roles.view'])
+                            ? rolesIndex.url()
+                            : dashboard.url()
+                    "
+                    >Cancel</Link
+                >
             </Button>
-            <Button type="submit" :disabled="form.processing">
+            <Button
+                v-if="
+                    hasPermissions([isEditing ? 'roles.edit' : 'roles.create'])
+                "
+                type="submit"
+                :disabled="form.processing"
+            >
                 <Spinner v-if="form.processing" />
                 {{ isEditing ? 'Update role' : 'Create role' }}
             </Button>

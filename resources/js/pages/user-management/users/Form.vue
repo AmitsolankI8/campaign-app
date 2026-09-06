@@ -19,6 +19,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { usePermissions } from '@/composables/usePermissions';
+import { dashboard } from '@/routes';
 import type { RoleOption } from '../types';
 
 type ManagedUser = {
@@ -33,6 +35,8 @@ const props = defineProps<{
     managedUser?: ManagedUser;
     roles: RoleOption[];
 }>();
+
+const { hasPermissions } = usePermissions();
 
 const isEditing = Boolean(props.managedUser);
 
@@ -52,6 +56,10 @@ const toggleRole = (role: string, checked: boolean) => {
 };
 
 const submit = () => {
+    if (!hasPermissions([isEditing ? 'users.edit' : 'users.create'])) {
+        return;
+    }
+
     if (props.managedUser) {
         form.put(update.url(props.managedUser.id), {
             preserveScroll: true,
@@ -172,9 +180,22 @@ const submit = () => {
 
         <div class="flex items-center justify-end gap-3">
             <Button type="button" variant="outline" as-child>
-                <Link :href="usersIndex.url()">Cancel</Link>
+                <Link
+                    :href="
+                        hasPermissions(['users.view'])
+                            ? usersIndex.url()
+                            : dashboard.url()
+                    "
+                    >Cancel</Link
+                >
             </Button>
-            <Button type="submit" :disabled="form.processing">
+            <Button
+                v-if="
+                    hasPermissions([isEditing ? 'users.edit' : 'users.create'])
+                "
+                type="submit"
+                :disabled="form.processing"
+            >
                 <Spinner v-if="form.processing" />
                 {{ isEditing ? 'Update user' : 'Create user' }}
             </Button>

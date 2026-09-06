@@ -9,6 +9,7 @@ import {
 } from '@/actions/App/Http/Controllers/UserManagement/UserController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/composables/usePermissions';
 
 type UserRow = {
     id: number;
@@ -33,7 +34,13 @@ defineOptions({
     },
 });
 
+const { hasPermissions } = usePermissions();
+
 const deleteUser = (user: UserRow) => {
+    if (!hasPermissions(['users.delete'])) {
+        return;
+    }
+
     if (!window.confirm(`Delete ${user.full_name}?`)) {
         return;
     }
@@ -53,7 +60,7 @@ const deleteUser = (user: UserRow) => {
                     Create users and assign their roles.
                 </p>
             </div>
-            <Button as-child>
+            <Button v-if="hasPermissions(['users.create'])" as-child>
                 <Link :href="create.url()">
                     <Plus class="size-4" />
                     Create user
@@ -69,7 +76,12 @@ const deleteUser = (user: UserRow) => {
                         <th class="px-4 py-3 font-medium">Email</th>
                         <th class="px-4 py-3 font-medium">Roles</th>
                         <th class="px-4 py-3 font-medium">Created</th>
-                        <th class="w-40 px-4 py-3 text-right font-medium">
+                        <th
+                            v-if="
+                                hasPermissions(['users.edit', 'users.delete'])
+                            "
+                            class="w-40 px-4 py-3 text-right font-medium"
+                        >
                             Actions
                         </th>
                     </tr>
@@ -77,7 +89,11 @@ const deleteUser = (user: UserRow) => {
                 <tbody>
                     <tr v-if="users.length === 0">
                         <td
-                            colspan="5"
+                            :colspan="
+                                hasPermissions(['users.edit', 'users.delete'])
+                                    ? 5
+                                    : 4
+                            "
                             class="px-4 py-8 text-center text-muted-foreground"
                         >
                             No users found.
@@ -110,15 +126,26 @@ const deleteUser = (user: UserRow) => {
                         <td class="px-4 py-3 text-muted-foreground">
                             {{ user.created_at ?? '—' }}
                         </td>
-                        <td class="px-4 py-3">
+                        <td
+                            v-if="
+                                hasPermissions(['users.edit', 'users.delete'])
+                            "
+                            class="px-4 py-3"
+                        >
                             <div class="flex justify-end gap-2">
-                                <Button size="sm" variant="outline" as-child>
+                                <Button
+                                    v-if="hasPermissions(['users.edit'])"
+                                    size="sm"
+                                    variant="outline"
+                                    as-child
+                                >
                                     <Link :href="edit.url(user.id)">
                                         <Pencil class="size-4" />
                                         Edit
                                     </Link>
                                 </Button>
                                 <Button
+                                    v-if="hasPermissions(['users.delete'])"
                                     size="sm"
                                     variant="destructive"
                                     type="button"

@@ -8,6 +8,7 @@ import {
     index,
 } from '@/actions/App/Http/Controllers/UserManagement/RoleController';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/composables/usePermissions';
 
 type RoleRow = {
     id: number;
@@ -32,7 +33,13 @@ defineOptions({
     },
 });
 
+const { hasPermissions } = usePermissions();
+
 const deleteRole = (role: RoleRow) => {
+    if (role.name === 'admin' || !hasPermissions(['roles.delete'])) {
+        return;
+    }
+
     if (!window.confirm(`Delete ${role.display_name}?`)) {
         return;
     }
@@ -52,7 +59,7 @@ const deleteRole = (role: RoleRow) => {
                     Create roles and assign seeded permissions.
                 </p>
             </div>
-            <Button as-child>
+            <Button v-if="hasPermissions(['roles.create'])" as-child>
                 <Link :href="create.url()">
                     <Plus class="size-4" />
                     Create role
@@ -67,7 +74,12 @@ const deleteRole = (role: RoleRow) => {
                         <th class="px-4 py-3 font-medium">Role</th>
                         <th class="px-4 py-3 font-medium">Short note</th>
                         <th class="px-4 py-3 font-medium">Users</th>
-                        <th class="w-40 px-4 py-3 text-right font-medium">
+                        <th
+                            v-if="
+                                hasPermissions(['roles.edit', 'roles.delete'])
+                            "
+                            class="w-40 px-4 py-3 text-right font-medium"
+                        >
                             Actions
                         </th>
                     </tr>
@@ -75,7 +87,11 @@ const deleteRole = (role: RoleRow) => {
                 <tbody>
                     <tr v-if="roles.length === 0">
                         <td
-                            colspan="4"
+                            :colspan="
+                                hasPermissions(['roles.edit', 'roles.delete'])
+                                    ? 4
+                                    : 3
+                            "
                             class="px-4 py-8 text-center text-muted-foreground"
                         >
                             No roles found.
@@ -96,18 +112,29 @@ const deleteRole = (role: RoleRow) => {
                         <td class="px-4 py-3 text-muted-foreground">
                             {{ role.users_count }}
                         </td>
-                        <td class="px-4 py-3">
+                        <td
+                            v-if="
+                                hasPermissions(['roles.edit', 'roles.delete'])
+                            "
+                            class="px-4 py-3"
+                        >
                             <div
                                 v-if="role.name !== 'admin'"
                                 class="flex justify-end gap-2"
                             >
-                                <Button size="sm" variant="outline" as-child>
+                                <Button
+                                    v-if="hasPermissions(['roles.edit'])"
+                                    size="sm"
+                                    variant="outline"
+                                    as-child
+                                >
                                     <Link :href="edit.url(role.id)">
                                         <Pencil class="size-4" />
                                         Edit
                                     </Link>
                                 </Button>
                                 <Button
+                                    v-if="hasPermissions(['roles.delete'])"
                                     size="sm"
                                     variant="destructive"
                                     type="button"

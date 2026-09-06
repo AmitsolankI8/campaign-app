@@ -1,9 +1,18 @@
+export type Role = {
+    id: number;
+    name: string;
+    display_name: string | null;
+    short_note: string | null;
+    guard_name: string;
+};
+
 export type User = {
     id: number;
     first_name: string;
     last_name: string;
     full_name: string;
     email: string;
+    roles: Role[];
     avatar?: string;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
@@ -14,6 +23,7 @@ export type User = {
 
 export type Auth = {
     user: User;
+    permissions: string[];
 };
 
 /* @chisel-passkeys */

@@ -46,67 +46,76 @@ const setItemOpen = (title: string, isOpen: boolean) => {
     <SidebarGroup class="px-2 py-0">
         <SidebarGroupLabel>Platform</SidebarGroupLabel>
         <SidebarMenu>
-            <Collapsible
-                v-for="item in items"
-                :key="item.title"
-                as-child
-                :open="openItem === item.title"
-                @update:open="setItemOpen(item.title, $event)"
-            >
-                <SidebarMenuItem class="group/collapsible">
-                    <template v-if="item.children?.length">
-                        <CollapsibleTrigger as-child>
-                            <SidebarMenuButton
-                                :is-active="
-                                    item.children.some((child) =>
-                                        isCurrentOrParentUrl(child.href),
-                                    )
-                                "
-                                :tooltip="item.title"
-                            >
+            <template v-for="item in items" :key="item.title">
+                <Collapsible
+                    v-if="item.isVisible !== false"
+                    as-child
+                    :open="openItem === item.title"
+                    @update:open="setItemOpen(item.title, $event)"
+                >
+                    <SidebarMenuItem class="group/collapsible">
+                        <template v-if="item.children?.length">
+                            <CollapsibleTrigger as-child>
+                                <SidebarMenuButton
+                                    :is-active="
+                                        item.children.some((child) =>
+                                            isCurrentOrParentUrl(child.href),
+                                        )
+                                    "
+                                    :tooltip="item.title"
+                                >
+                                    <component :is="item.icon" />
+                                    <span>{{ item.title }}</span>
+                                    <ChevronRight
+                                        class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
+                                    />
+                                </SidebarMenuButton>
+                            </CollapsibleTrigger>
+
+                            <CollapsibleContent>
+                                <SidebarMenuSub>
+                                    <template
+                                        v-for="child in item.children"
+                                        :key="child.title"
+                                    >
+                                        <SidebarMenuSubItem
+                                            v-if="child.isVisible !== false"
+                                        >
+                                            <SidebarMenuSubButton
+                                                as-child
+                                                :is-active="
+                                                    isCurrentOrParentUrl(
+                                                        child.href,
+                                                    )
+                                                "
+                                            >
+                                                <Link :href="child.href">
+                                                    <span>{{
+                                                        child.title
+                                                    }}</span>
+                                                </Link>
+                                            </SidebarMenuSubButton>
+                                        </SidebarMenuSubItem>
+                                    </template>
+                                </SidebarMenuSub>
+                            </CollapsibleContent>
+                        </template>
+
+                        <SidebarMenuButton
+                            v-else
+                            as-child
+                            :is-active="isCurrentUrl(item.href)"
+                            :tooltip="item.title"
+                            @click="openItem = null"
+                        >
+                            <Link :href="item.href">
                                 <component :is="item.icon" />
                                 <span>{{ item.title }}</span>
-                                <ChevronRight
-                                    class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
-                                />
-                            </SidebarMenuButton>
-                        </CollapsibleTrigger>
-
-                        <CollapsibleContent>
-                            <SidebarMenuSub>
-                                <SidebarMenuSubItem
-                                    v-for="child in item.children"
-                                    :key="child.title"
-                                >
-                                    <SidebarMenuSubButton
-                                        as-child
-                                        :is-active="
-                                            isCurrentOrParentUrl(child.href)
-                                        "
-                                    >
-                                        <Link :href="child.href">
-                                            <span>{{ child.title }}</span>
-                                        </Link>
-                                    </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                            </SidebarMenuSub>
-                        </CollapsibleContent>
-                    </template>
-
-                    <SidebarMenuButton
-                        v-else
-                        as-child
-                        :is-active="isCurrentUrl(item.href)"
-                        :tooltip="item.title"
-                        @click="openItem = null"
-                    >
-                        <Link :href="item.href">
-                            <component :is="item.icon" />
-                            <span>{{ item.title }}</span>
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </Collapsible>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </Collapsible>
+            </template>
         </SidebarMenu>
     </SidebarGroup>
 </template>

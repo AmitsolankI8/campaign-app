@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\PermissionRegistry;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -39,7 +40,11 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user()?->loadMissing('roles'),
+                'permissions' => fn () => array_values(array_filter(
+                    PermissionRegistry::names(),
+                    fn (string $permission) => $request->user()?->can($permission) ?? false,
+                )),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
