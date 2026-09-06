@@ -3,19 +3,18 @@
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\PermissionRegistry;
 use Database\Seeders\UserManagementSeeder;
 use Illuminate\Database\QueryException;
 
 test('custom role and permission metadata preserves Spatie name based APIs', function () {
     /** @var Permission $permission */
-    $permission = Permission::create([
-        'name' => 'users.view',
-        'display_name' => 'View users',
+    $permission = Permission::factory()->fromRegistry('users.view')->create([
         'short_note' => 'View the user list.',
     ]);
 
     /** @var Role $role */
-    $role = Role::create([
+    $role = Role::factory()->create([
         'name' => 'administrator',
         'display_name' => 'Administrator',
         'short_note' => 'Full administration access.',
@@ -32,7 +31,13 @@ test('custom role and permission metadata preserves Spatie name based APIs', fun
 });
 
 test('roles and permissions require display names in the database', function (string $model, array $attributes) {
-    expect(fn () => $model::create(['name' => 'example', ...$attributes]))
+    $record = $model::factory()->make(['name' => 'example', ...$attributes]);
+
+    if (! array_key_exists('display_name', $attributes)) {
+        unset($record->display_name);
+    }
+
+    expect(fn () => $record->save())
         ->toThrow(QueryException::class);
 })->with([
     'role missing' => [Role::class, []],
@@ -42,11 +47,11 @@ test('roles and permissions require display names in the database', function (st
 ]);
 
 test('creating roles and permissions preserves explicit display names', function () {
-    $role = Role::create([
+    $role = Role::factory()->create([
         'name' => 'support-manager',
         'display_name' => 'Support team lead',
     ]);
-    $permission = Permission::create([
+    $permission = Permission::factory()->create([
         'name' => 'users.export',
         'display_name' => 'Export user records',
     ]);
@@ -68,6 +73,9 @@ test('user full name is exposed to the application and passkeys', function () {
 
 test('user management seeder stores canonical names and display metadata', function () {
     $this->seed(UserManagementSeeder::class);
+    $adminUser = User::where('email', 'admin@example.com')->firstOrFail();
+    $adminUser->update(['first_name' => 'Existing', 'password' => 'changed-password']);
+    $password = $adminUser->password;
     $this->seed(UserManagementSeeder::class);
 
     /** @var Role $role */
@@ -78,7 +86,43 @@ test('user management seeder stores canonical names and display metadata', funct
     expect($role->display_name)->toBe('Administrator')
         ->and($role->hasPermissionTo('users.view'))->toBeTrue()
         ->and($permission->display_name)->toBe('View users')
-        ->and($permission->short_note)->not->toBeEmpty();
+        ->and($permission->short_note)->not->toBeEmpty()
+        ->and(Permission::count())->toBe(count(PermissionRegistry::names()))
+        ->and(Role::count())->toBe(1)
+        ->and(User::count())->toBe(1)
+        ->and($adminUser->fresh()->first_name)->toBe('Existing')
+        ->and($adminUser->fresh()->password)->toBe($password);
+});
+
+test('role and permission factories create complete distinct records', function (string $model) {
+    $records = $model::factory()->count(3)->create();
+
+    expect($records->pluck('name')->unique())->toHaveCount(3);
+
+    foreach ($records as $record) {
+        expect($record->fresh()->display_name)->not->toBeEmpty()
+            ->and($record->guard_name)->toBe('web');
+    }
+})->with([
+    'role' => [Role::class],
+    'permission' => [Permission::class],
+]);
+
+test('permission factory uses canonical registry metadata', function () {
+    foreach (PermissionRegistry::groups() as $permissions) {
+        foreach ($permissions as $attributes) {
+            $permission = Permission::factory()->fromRegistry($attributes['name'])->create();
+
+            expect($permission->name)->toBe($attributes['name'])
+                ->and($permission->display_name)->toBe($attributes['display_name'])
+                ->and($permission->short_note)->toBe($attributes['short_note']);
+        }
+    }
+});
+
+test('permission factory rejects unknown registry names', function () {
+    expect(fn () => Permission::factory()->fromRegistry('unknown.permission'))
+        ->toThrow(InvalidArgumentException::class);
 });
 
 test('role creation and editing require a display name', function (array $attributes) {
@@ -90,7 +134,7 @@ test('role creation and editing require a display name', function (array $attrib
         ...$attributes,
     ])->assertSessionHasErrors('display_name');
 
-    $role = Role::create(['name' => 'support-manager', 'display_name' => 'Support Manager']);
+    $role = Role::factory()->create(['name' => 'support-manager']);
 
     $this->put(route('user-management.roles.update', $role), [
         'name' => 'support-manager',

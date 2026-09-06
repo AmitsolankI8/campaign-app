@@ -6,9 +6,9 @@ use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('shared permissions include direct and inherited grants and refresh after revocation', function () {
-    Permission::create(['name' => 'users.view', 'display_name' => 'View users']);
-    Permission::create(['name' => 'roles.create', 'display_name' => 'Create roles']);
-    $role = Role::create(['name' => 'viewer', 'display_name' => 'Viewer']);
+    Permission::factory()->fromRegistry('users.view')->create();
+    Permission::factory()->fromRegistry('roles.create')->create();
+    $role = Role::factory()->create(['name' => 'viewer']);
     $role->givePermissionTo('users.view');
     $user = User::factory()->create();
     $user->assignRole($role);
@@ -35,7 +35,7 @@ test('guests and users without grants receive no shared permissions', function (
 });
 
 test('view permission does not authorize management actions', function (string $resource) {
-    Permission::create(['name' => "{$resource}.view", 'display_name' => "View {$resource}"]);
+    Permission::factory()->fromRegistry("{$resource}.view")->create();
     $user = User::factory()->create();
     $user->givePermissionTo("{$resource}.view");
 
