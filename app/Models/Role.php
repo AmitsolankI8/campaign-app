@@ -7,7 +7,7 @@ use Spatie\Permission\Models\Role as SpatieRole;
 /**
  * @property int $id
  * @property string $name
- * @property string|null $display_name
+ * @property string $display_name
  * @property string|null $short_note
  * @property string $guard_name
  */

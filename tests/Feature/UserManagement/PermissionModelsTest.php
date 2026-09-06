@@ -4,18 +4,19 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\UserManagementSeeder;
+use Illuminate\Database\QueryException;
 
 test('custom role and permission metadata preserves Spatie name based APIs', function () {
     /** @var Permission $permission */
-    $permission = Permission::findOrCreate('users.view');
-    $permission->update([
+    $permission = Permission::create([
+        'name' => 'users.view',
         'display_name' => 'View users',
         'short_note' => 'View the user list.',
     ]);
 
     /** @var Role $role */
-    $role = Role::findOrCreate('administrator');
-    $role->update([
+    $role = Role::create([
+        'name' => 'administrator',
         'display_name' => 'Administrator',
         'short_note' => 'Full administration access.',
     ]);
@@ -30,14 +31,28 @@ test('custom role and permission metadata preserves Spatie name based APIs', fun
         ->and($permission->display_name)->toBe('View users');
 });
 
-test('package created roles and permissions receive readable display fallbacks', function () {
-    /** @var Role $role */
-    $role = Role::findOrCreate('support-manager');
-    /** @var Permission $permission */
-    $permission = Permission::findOrCreate('users.export');
+test('roles and permissions require display names in the database', function (string $model, array $attributes) {
+    expect(fn () => $model::create(['name' => 'example', ...$attributes]))
+        ->toThrow(QueryException::class);
+})->with([
+    'role missing' => [Role::class, []],
+    'role null' => [Role::class, ['display_name' => null]],
+    'permission missing' => [Permission::class, []],
+    'permission null' => [Permission::class, ['display_name' => null]],
+]);
 
-    expect($role->display_name)->toBe('Support Manager')
-        ->and($permission->display_name)->toBe('Users Export');
+test('creating roles and permissions preserves explicit display names', function () {
+    $role = Role::create([
+        'name' => 'support-manager',
+        'display_name' => 'Support team lead',
+    ]);
+    $permission = Permission::create([
+        'name' => 'users.export',
+        'display_name' => 'Export user records',
+    ]);
+
+    expect($role->fresh()->display_name)->toBe('Support team lead')
+        ->and($permission->fresh()->display_name)->toBe('Export user records');
 });
 
 test('user full name is exposed to the application and passkeys', function () {
@@ -53,6 +68,7 @@ test('user full name is exposed to the application and passkeys', function () {
 
 test('user management seeder stores canonical names and display metadata', function () {
     $this->seed(UserManagementSeeder::class);
+    $this->seed(UserManagementSeeder::class);
 
     /** @var Role $role */
     $role = Role::findByName('admin');
@@ -64,3 +80,26 @@ test('user management seeder stores canonical names and display metadata', funct
         ->and($permission->display_name)->toBe('View users')
         ->and($permission->short_note)->not->toBeEmpty();
 });
+
+test('role creation and editing require a display name', function (array $attributes) {
+    $this->seed(UserManagementSeeder::class);
+    $this->actingAs(User::where('email', 'admin@example.com')->firstOrFail());
+
+    $this->post(route('user-management.roles.store'), [
+        'name' => 'support-manager',
+        ...$attributes,
+    ])->assertSessionHasErrors('display_name');
+
+    $role = Role::create(['name' => 'support-manager', 'display_name' => 'Support Manager']);
+
+    $this->put(route('user-management.roles.update', $role), [
+        'name' => 'support-manager',
+        ...$attributes,
+    ])->assertSessionHasErrors('display_name');
+
+    expect($role->fresh()->display_name)->toBe('Support Manager');
+})->with([
+    'missing' => [[]],
+    'null' => [['display_name' => null]],
+    'empty' => [['display_name' => '']],
+]);

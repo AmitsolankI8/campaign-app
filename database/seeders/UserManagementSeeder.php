@@ -18,21 +18,15 @@ class UserManagementSeeder extends Seeder
         $permissions = collect(PermissionRegistry::groups())
             ->flatten(1)
             ->map(function (array $attributes): Permission {
-                /** @var Permission $permission */
-                $permission = Permission::findOrCreate($attributes['name']);
-                $permission->update([
-                    'display_name' => $attributes['display_name'],
-                    'short_note' => $attributes['short_note'],
-                ]);
-
-                return $permission;
+                return Permission::query()->updateOrCreate(
+                    ['name' => $attributes['name'], 'guard_name' => 'web'],
+                    $attributes,
+                );
             });
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        /** @var Role $adminRole */
-        $adminRole = Role::findOrCreate('admin');
-        $adminRole->update([
+        $adminRole = Role::query()->updateOrCreate(['name' => 'admin', 'guard_name' => 'web'], [
             'display_name' => 'Administrator',
             'short_note' => 'Full access to application administration.',
         ]);
