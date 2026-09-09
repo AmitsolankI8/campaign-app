@@ -19,7 +19,6 @@ class SystemSettingsController extends Controller
 
         return Inertia::render('system-settings/System', [
             'settings' => [
-                'display_name' => $settings->display_name,
                 'default_country_preference_id' => $settings->default_country_preference_id,
                 'default_timezone_preference_id' => $settings->default_timezone_preference_id,
                 'default_language_preference_id' => $settings->default_language_preference_id,

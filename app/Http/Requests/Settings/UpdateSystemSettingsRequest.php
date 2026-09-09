@@ -21,7 +21,6 @@ class UpdateSystemSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'display_name' => ['required', 'string', 'max:255'],
             ...$this->preferenceRules('default_'),
         ];
     }

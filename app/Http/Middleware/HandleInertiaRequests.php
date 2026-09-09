@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Settings\SystemSettings;
 use App\Support\PermissionRegistry;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -39,7 +38,7 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            'name' => fn () => app(SystemSettings::class)->display_name,
+            'name' => fn () => config('app.name', 'Laravel'),
             'auth' => [
                 'user' => $request->user()?->loadMissing('roles'),
                 'permissions' => fn () => array_values(array_filter(

@@ -4,7 +4,6 @@ import {
     edit,
     update,
 } from '@/actions/App/Http/Controllers/Settings/SystemSettingsController';
-import InputError from '@/components/InputError.vue';
 import PreferenceSelectFields from '@/components/PreferenceSelectFields.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,14 +13,11 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { usePermissions } from '@/composables/usePermissions';
 import type { PreferenceOptions } from '@/types/preferences';
 
 type SystemSettings = {
-    display_name: string;
     default_country_preference_id: number;
     default_timezone_preference_id: number;
     default_language_preference_id: number;
@@ -39,7 +35,6 @@ defineOptions({
 });
 const { hasPermissions } = usePermissions();
 const form = useForm({
-    display_name: props.settings.display_name,
     default_country_preference_id: String(
         props.settings.default_country_preference_id,
     ),
@@ -93,11 +88,10 @@ const submit = () => {
         </div>
         <Card class="max-w-3xl">
             <CardHeader>
-                <CardTitle>General</CardTitle>
-                <CardDescription
-                    >Customize the name shown in the application
-                    sidebar.</CardDescription
-                >
+                <CardTitle>Default preferences</CardTitle>
+                <CardDescription>
+                    Set the defaults used when new user preferences are created.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <form
@@ -110,21 +104,6 @@ const submit = () => {
                     class="space-y-6"
                     @submit.prevent="submit"
                 >
-                    <div class="grid gap-2">
-                        <Label for="display_name" required
-                            >System display name</Label
-                        >
-                        <Input
-                            id="display_name"
-                            v-model="form.display_name"
-                            aria-required="true"
-                            maxlength="255"
-                            :aria-invalid="Boolean(form.errors.display_name)"
-                        />
-                        <InputError :message="form.errors.display_name" />
-                    </div>
-
-                    <CardTitle class="text-base">Default preferences</CardTitle>
                     <PreferenceSelectFields
                         :form="form"
                         :errors="form.errors"
@@ -143,12 +122,6 @@ const submit = () => {
                     class="grid gap-2"
                 >
                     <dt class="text-sm text-muted-foreground">
-                        System display name
-                    </dt>
-                    <dd class="text-sm font-medium">
-                        {{ settings.display_name }}
-                    </dd>
-                    <dt class="pt-4 text-sm text-muted-foreground">
                         Default country
                     </dt>
                     <dd class="text-sm font-medium">
