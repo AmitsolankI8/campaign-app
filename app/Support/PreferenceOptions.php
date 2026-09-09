@@ -103,7 +103,9 @@ class PreferenceOptions
     }
 
     /**
-     * @param  EloquentCollection<int, PreferenceCountry|PreferenceTimezone|PreferenceLanguage>  $preferences
+     * @template TPreference of PreferenceCountry|PreferenceTimezone|PreferenceLanguage
+     *
+     * @param  EloquentCollection<int, TPreference>  $preferences
      * @return array<int, array{id: int, name: string, identifier: string, display_name: string, short_code: string}>
      */
     private static function simpleOptions(EloquentCollection $preferences): array
