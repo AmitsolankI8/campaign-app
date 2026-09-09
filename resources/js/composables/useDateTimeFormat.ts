@@ -69,10 +69,7 @@ export function useDateTimeFormat() {
         () => `${dateFormat.value} ${timeFormat.value}`,
     );
 
-    const formatUtc = (
-        value: DateTimeValue,
-        format: string,
-    ): string | null => {
+    const formatUtc = (value: DateTimeValue, format: string): string | null => {
         if (!value) {
             return null;
         }
