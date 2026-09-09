@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\UserPreferences;
 use Database\Factories\UserPreferenceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,16 @@ class UserPreference extends Model
         'date_format_preference_id',
         'time_format_preference_id',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(function (UserPreference $preferences): void {
+            UserPreferences::forgetForUserId($preferences->user_id);
+        });
+        static::deleted(function (UserPreference $preferences): void {
+            UserPreferences::forgetForUserId($preferences->user_id);
+        });
+    }
 
     /**
      * @return BelongsTo<User, $this>

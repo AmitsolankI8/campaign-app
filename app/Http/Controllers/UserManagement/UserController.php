@@ -29,7 +29,7 @@ class UserController extends Controller
                     'id' => $user->id,
                     'full_name' => $user->full_name,
                     'email' => $user->email,
-                    'created_at' => $user->created_at?->toDateString(),
+                    'created_at' => $user->created_at?->toJSON(),
                     'roles' => $user->roles->pluck('display_name')->values(),
                     'can_delete' => ! $user->hasRole('admin') && ! $user->is(auth()->user()),
                     'can_edit' => ! $user->hasRole('admin') || $user->is(auth()->user()),

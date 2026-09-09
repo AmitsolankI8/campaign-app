@@ -10,6 +10,7 @@ import {
 } from '@/actions/App/Http/Controllers/UserManagement/UserController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useDateTimeFormat } from '@/composables/useDateTimeFormat';
 import { usePermissions } from '@/composables/usePermissions';
 
 type UserRow = {
@@ -38,6 +39,7 @@ defineOptions({
 });
 
 const { hasPermissions } = usePermissions();
+const { formatDate } = useDateTimeFormat();
 const page = usePage();
 
 const canEditUser = (user: UserRow): boolean =>
@@ -133,7 +135,7 @@ const deleteUser = (user: UserRow) => {
                             </div>
                         </td>
                         <td class="px-4 py-3 text-muted-foreground">
-                            {{ user.created_at ?? '—' }}
+                            {{ formatDate(user.created_at) ?? '—' }}
                         </td>
                         <td v-if="showActions" class="px-4 py-3">
                             <div class="flex justify-end gap-2">

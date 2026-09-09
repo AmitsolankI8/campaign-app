@@ -1,3 +1,5 @@
+import type { UserPreferences } from '@/types/preferences';
+
 export type Role = {
     id: number;
     name: string;
@@ -23,6 +25,7 @@ export type User = {
 
 export type Auth = {
     user: User;
+    preferences: UserPreferences | null;
     permissions: string[];
 };
 

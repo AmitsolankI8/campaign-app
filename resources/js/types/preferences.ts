@@ -32,3 +32,19 @@ export type UserPreferenceValues = {
     date_format_preference_id: number;
     time_format_preference_id: number;
 };
+
+export type UserPreferenceFormat = FormatPreferenceOption & {
+    client_format: string;
+};
+
+export type UserPreferences = {
+    values: UserPreferenceValues | null;
+    country: PreferenceOption | null;
+    timezone: PreferenceOption | null;
+    language: PreferenceOption | null;
+    formats: {
+        number: UserPreferenceFormat | null;
+        date: UserPreferenceFormat | null;
+        time: UserPreferenceFormat | null;
+    };
+};
