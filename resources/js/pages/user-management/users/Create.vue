@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { create } from '@/actions/App/Http/Controllers/UserManagement/UserController';
+import type {
+    PreferenceOptions,
+    UserPreferenceValues,
+} from '@/types/preferences';
 import type { RoleOption } from '../types';
 import UserForm from './Form.vue';
 
 defineProps<{
     roles: RoleOption[];
+    preferenceOptions: PreferenceOptions;
+    defaultPreferences: UserPreferenceValues;
 }>();
 
 defineOptions({
@@ -31,6 +37,10 @@ defineOptions({
             </p>
         </div>
 
-        <UserForm :roles="roles" />
+        <UserForm
+            :roles="roles"
+            :preference-options="preferenceOptions"
+            :default-preferences="defaultPreferences"
+        />
     </div>
 </template>

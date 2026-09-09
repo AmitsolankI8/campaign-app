@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\UserManagement;
 
+use App\Concerns\PreferenceValidationRules;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
@@ -11,6 +12,8 @@ use Illuminate\Validation\Validator;
 
 class UpdateUserRequest extends FormRequest
 {
+    use PreferenceValidationRules;
+
     public function authorize(): bool
     {
         /** @var User $user */
@@ -42,6 +45,7 @@ class UpdateUserRequest extends FormRequest
             'password' => ['nullable', 'confirmed', Password::defaults()],
             'roles' => ['array'],
             'roles.*' => ['string', Rule::when(! $user->hasRole('admin'), [Rule::notIn(['admin'])]), Rule::exists((new Role)->getTable(), 'name')],
+            ...$this->preferenceRules(),
         ];
     }
 

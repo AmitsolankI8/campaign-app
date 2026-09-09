@@ -35,7 +35,7 @@ export default defineConfig({
         host: '0.0.0.0',
         hmr: {
             host: 'localhost',
-            port: 8000
+            port: 9000,
         }
     }
 });

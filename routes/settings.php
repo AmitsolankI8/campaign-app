@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\PreferencesController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\SystemSettingsController;
@@ -16,6 +17,7 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('settings/system', [SystemSettingsController::class, 'edit'])->name('system-settings.edit');
     Route::put('settings/system', [SystemSettingsController::class, 'update'])->name('system-settings.update');
+    Route::get('settings/preferences', [PreferencesController::class, 'index'])->name('preferences.index');
 
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 

@@ -1,5 +1,7 @@
 <?php
 
+use App\Settings\SystemSettings;
+use App\Support\PreferenceOptions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,7 +46,12 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * @return array<string, int>
+ */
+function preferencePayload(string $prefix = ''): array
 {
-    // ..
+    return collect(PreferenceOptions::defaults(app(SystemSettings::class)))
+        ->mapWithKeys(fn (int $value, string $field) => [$prefix.$field => $value])
+        ->all();
 }

@@ -5,7 +5,9 @@ namespace Database\Seeders;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Settings\SystemSettings;
 use App\Support\PermissionRegistry;
+use App\Support\PreferenceOptions;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -44,6 +46,10 @@ class UserManagementSeeder extends Seeder
             ]);
 
         $adminUser->syncRoles([$adminRole]);
+        $adminUser->preferences()->updateOrCreate(
+            ['user_id' => $adminUser->id],
+            PreferenceOptions::defaults(app(SystemSettings::class)),
+        );
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

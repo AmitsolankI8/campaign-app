@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { index } from '@/actions/App/Http/Controllers/UserManagement/UserController';
+import type {
+    PreferenceOptions,
+    UserPreferenceValues,
+} from '@/types/preferences';
 import type { RoleOption } from '../types';
 import UserForm from './Form.vue';
 
@@ -12,11 +16,14 @@ type ManagedUser = {
     roles: string[];
     roles_locked: boolean;
     can_edit: boolean;
+    preferences: UserPreferenceValues;
 };
 
 defineProps<{
     managedUser: ManagedUser;
     roles: RoleOption[];
+    preferenceOptions: PreferenceOptions;
+    defaultPreferences: UserPreferenceValues;
 }>();
 
 defineOptions({
@@ -42,6 +49,11 @@ defineOptions({
             </p>
         </div>
 
-        <UserForm :managed-user="managedUser" :roles="roles" />
+        <UserForm
+            :managed-user="managedUser"
+            :roles="roles"
+            :preference-options="preferenceOptions"
+            :default-preferences="defaultPreferences"
+        />
     </div>
 </template>

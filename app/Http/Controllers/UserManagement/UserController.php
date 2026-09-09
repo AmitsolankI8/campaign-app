@@ -7,6 +7,8 @@ use App\Http\Requests\UserManagement\StoreUserRequest;
 use App\Http\Requests\UserManagement\UpdateUserRequest;
 use App\Models\Role;
 use App\Models\User;
+use App\Settings\SystemSettings;
+use App\Support\PreferenceOptions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -35,18 +37,21 @@ class UserController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(SystemSettings $settings): Response
     {
         Gate::authorize('users.create');
 
         return Inertia::render('user-management/users/Create', [
             'roles' => $this->roles(),
+            'preferenceOptions' => PreferenceOptions::forForms(),
+            'defaultPreferences' => PreferenceOptions::defaults($settings),
         ]);
     }
 
     public function store(StoreUserRequest $request): RedirectResponse
     {
         $user = User::create($request->safe()->only(['first_name', 'last_name', 'email', 'password']));
+        $user->preferences()->create($request->safe()->only(PreferenceOptions::FIELDS));
         $user->syncRoles($request->validated('roles', []));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('User created.')]);
@@ -54,11 +59,13 @@ class UserController extends Controller
         return to_route('user-management.users.index');
     }
 
-    public function edit(User $user): Response
+    public function edit(User $user, SystemSettings $settings): Response
     {
         Gate::authorize('users.edit');
 
         abort_if($user->hasRole('admin') && ! $user->is(auth()->user()), 403, __('Only the administrator can edit their own account.'));
+
+        $user->loadMissing('preferences');
 
         return Inertia::render('user-management/users/Edit', [
             'managedUser' => [
@@ -69,8 +76,11 @@ class UserController extends Controller
                 'roles' => $user->roles()->pluck('name'),
                 'roles_locked' => $user->hasRole('admin'),
                 'can_edit' => ! $user->hasRole('admin') || $user->is(auth()->user()),
+                'preferences' => PreferenceOptions::values($user->preferences, $settings),
             ],
             'roles' => $this->roles(),
+            'preferenceOptions' => PreferenceOptions::forForms(),
+            'defaultPreferences' => PreferenceOptions::defaults($settings),
         ]);
     }
 
@@ -83,6 +93,11 @@ class UserController extends Controller
         }
 
         $user->save();
+        $user->preferences()->updateOrCreate(
+            ['user_id' => $user->id],
+            $request->safe()->only(PreferenceOptions::FIELDS),
+        );
+
         if (! $user->hasRole('admin')) {
             $user->syncRoles($request->validated('roles', []));
         }

@@ -16,6 +16,9 @@ class PermissionRegistry
                 ['name' => 'system-settings.view', 'display_name' => 'View system settings', 'short_note' => 'View system-wide settings.'],
                 ['name' => 'system-settings.edit', 'display_name' => 'Edit system settings', 'short_note' => 'Update system-wide settings.'],
             ],
+            'Preferences' => [
+                ['name' => 'preferences.view', 'display_name' => 'View preferences', 'short_note' => 'View available countries, timezones, languages, and formats.'],
+            ],
             'Users' => [
                 ['name' => 'users.view', 'display_name' => 'View users', 'short_note' => 'View the user list and user details.'],
                 ['name' => 'users.create', 'display_name' => 'Create users', 'short_note' => 'Create new user accounts.'],

@@ -56,7 +56,10 @@ test('direct and role grants allow persistent system settings updates', function
         $user->givePermissionTo(['system-settings.view', 'system-settings.edit']);
     }
 
-    $this->actingAs($user)->put(route('system-settings.update'), ['display_name' => 'Campaign Console'])
+    $this->actingAs($user)->put(route('system-settings.update'), [
+        'display_name' => 'Campaign Console',
+        ...preferencePayload('default_'),
+    ])
         ->assertSessionHasNoErrors()->assertRedirect(route('system-settings.edit'));
     $this->assertDatabaseHas('settings', [
         'group' => 'system', 'name' => 'display_name', 'payload' => json_encode('Campaign Console'),
@@ -84,7 +87,10 @@ test('invalid system settings are rejected', function (mixed $name) {
     $user = User::factory()->create();
     $user->givePermissionTo(['system-settings.view', 'system-settings.edit']);
     $original = app(SystemSettings::class)->display_name;
-    $this->actingAs($user)->put(route('system-settings.update'), ['display_name' => $name])
+    $this->actingAs($user)->put(route('system-settings.update'), [
+        'display_name' => $name,
+        ...preferencePayload('default_'),
+    ])
         ->assertSessionHasErrors('display_name');
     expect(app(SystemSettings::class)->refresh()->display_name)->toBe($original);
 })->with([null, '', '   ', str_repeat('a', 256), 123]);

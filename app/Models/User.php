@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -28,6 +29,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read UserPreference|null $preferences
  */
 class User extends Authenticatable implements PasskeyUser
 {
@@ -75,5 +77,13 @@ class User extends Authenticatable implements PasskeyUser
     public function getPasskeyDisplayName(): string
     {
         return $this->full_name;
+    }
+
+    /**
+     * @return HasOne<UserPreference, $this>
+     */
+    public function preferences(): HasOne
+    {
+        return $this->hasOne(UserPreference::class);
     }
 }

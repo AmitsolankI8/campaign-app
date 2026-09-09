@@ -22,7 +22,7 @@ beforeEach(function () {
 });
 
 test('admin cannot be assigned when creating or updating another user', function () {
-    $data = ['first_name' => 'New', 'last_name' => 'User', 'email' => 'new@example.com', 'password' => 'password', 'password_confirmation' => 'password', 'roles' => ['admin']];
+    $data = ['first_name' => 'New', 'last_name' => 'User', 'email' => 'new@example.com', 'password' => 'password', 'password_confirmation' => 'password', 'roles' => ['admin'], ...preferencePayload()];
     $this->post(route('user-management.users.store'), $data)->assertSessionHasErrors('roles.0');
     expect(User::where('email', $data['email'])->exists())->toBeFalse();
     $this->put(route('user-management.users.update', $this->manager), $data)->assertSessionHasErrors('roles.0');
@@ -32,7 +32,7 @@ test('admin cannot be assigned when creating or updating another user', function
 test('admin role changes are rejected without changing the profile', function (array $roles) {
     $this->actingAs($this->admin);
     $this->put(route('user-management.users.update', $this->admin), [
-        'first_name' => 'Changed', 'last_name' => $this->admin->last_name, 'email' => $this->admin->email, 'roles' => $roles,
+        'first_name' => 'Changed', 'last_name' => $this->admin->last_name, 'email' => $this->admin->email, 'roles' => $roles, ...preferencePayload(),
     ])->assertSessionHasErrors('roles');
     expect($this->admin->fresh()->first_name)->toBe($this->admin->first_name);
     expect($this->admin->fresh()->hasRole('admin'))->toBeTrue();
@@ -40,7 +40,7 @@ test('admin role changes are rejected without changing the profile', function (a
 
 test('admin profile updates preserve roles when unchanged or omitted', function (bool $includeRoles) {
     $this->actingAs($this->admin);
-    $data = ['first_name' => 'Updated', 'last_name' => $this->admin->last_name, 'email' => $this->admin->email];
+    $data = ['first_name' => 'Updated', 'last_name' => $this->admin->last_name, 'email' => $this->admin->email, ...preferencePayload()];
     if ($includeRoles) {
         $data['roles'] = ['admin'];
     }
@@ -91,7 +91,7 @@ test('other users cannot edit the admin even with direct or inherited permission
 })->with([true, false]);
 
 test('ordinary users can still be created updated and deleted with inherited permissions', function () {
-    $data = ['first_name' => 'New', 'last_name' => 'User', 'email' => 'new@example.com', 'password' => 'password', 'password_confirmation' => 'password', 'roles' => ['manager']];
+    $data = ['first_name' => 'New', 'last_name' => 'User', 'email' => 'new@example.com', 'password' => 'password', 'password_confirmation' => 'password', 'roles' => ['manager'], ...preferencePayload()];
     $this->post(route('user-management.users.store'), $data)->assertSessionHasNoErrors();
     $user = User::where('email', $data['email'])->firstOrFail();
     $data['roles'] = [];

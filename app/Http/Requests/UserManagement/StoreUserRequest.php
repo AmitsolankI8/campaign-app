@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\UserManagement;
 
+use App\Concerns\PreferenceValidationRules;
 use App\Models\Role;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -9,6 +10,8 @@ use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends FormRequest
 {
+    use PreferenceValidationRules;
+
     public function authorize(): bool
     {
         return $this->user()?->can('users.create') === true;
@@ -26,6 +29,7 @@ class StoreUserRequest extends FormRequest
             'password' => ['required', 'confirmed', Password::defaults()],
             'roles' => ['array'],
             'roles.*' => ['string', Rule::notIn(['admin']), Rule::exists((new Role)->getTable(), 'name')],
+            ...$this->preferenceRules(),
         ];
     }
 }

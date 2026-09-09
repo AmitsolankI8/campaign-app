@@ -7,6 +7,7 @@ import {
 } from '@/actions/App/Http/Controllers/UserManagement/UserController';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
+import PreferenceSelectFields from '@/components/PreferenceSelectFields.vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -21,6 +22,10 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
+import type {
+    PreferenceOptions,
+    UserPreferenceValues,
+} from '@/types/preferences';
 import type { RoleOption } from '../types';
 
 type ManagedUser = {
@@ -31,16 +36,20 @@ type ManagedUser = {
     roles: string[];
     roles_locked: boolean;
     can_edit: boolean;
+    preferences: UserPreferenceValues;
 };
 
 const props = defineProps<{
     managedUser?: ManagedUser;
     roles: RoleOption[];
+    preferenceOptions: PreferenceOptions;
+    defaultPreferences: UserPreferenceValues;
 }>();
 
 const { hasPermissions } = usePermissions();
 
 const isEditing = Boolean(props.managedUser);
+const preferences = props.managedUser?.preferences ?? props.defaultPreferences;
 
 const form = useForm({
     first_name: props.managedUser?.first_name ?? '',
@@ -49,6 +58,14 @@ const form = useForm({
     password: '',
     password_confirmation: '',
     roles: props.managedUser?.roles ?? [],
+    country_preference_id: String(preferences.country_preference_id),
+    timezone_preference_id: String(preferences.timezone_preference_id),
+    language_preference_id: String(preferences.language_preference_id),
+    number_format_preference_id: String(
+        preferences.number_format_preference_id,
+    ),
+    date_format_preference_id: String(preferences.date_format_preference_id),
+    time_format_preference_id: String(preferences.time_format_preference_id),
 });
 
 const toggleRole = (role: string, checked: boolean) => {
@@ -59,6 +76,10 @@ const toggleRole = (role: string, checked: boolean) => {
     form.roles = checked
         ? [...form.roles, role]
         : form.roles.filter((item) => item !== role);
+};
+
+const updatePreferenceField = (field: string, value: string | number): void => {
+    (form as unknown as Record<string, string | number>)[field] = value;
 };
 
 const submit = () => {
@@ -164,6 +185,23 @@ const submit = () => {
                     />
                     <InputError :message="form.errors.password_confirmation" />
                 </div>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Preferences</CardTitle>
+                <CardDescription>
+                    Country, timezone, language, and formats.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <PreferenceSelectFields
+                    :form="form"
+                    :errors="form.errors"
+                    :options="preferenceOptions"
+                    @update-field="updatePreferenceField"
+                />
             </CardContent>
         </Card>
 

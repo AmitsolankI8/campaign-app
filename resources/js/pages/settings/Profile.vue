@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/DeleteUser.vue';
+import FormPreferenceSelectFields from '@/components/FormPreferenceSelectFields.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
+import type {
+    PreferenceOptions,
+    UserPreferenceValues,
+} from '@/types/preferences';
 
 defineOptions({
     layout: {
@@ -24,7 +29,11 @@ defineOptions({
 });
 
 const page = usePage();
-defineProps<{ canDeleteAccount: boolean }>();
+defineProps<{
+    canDeleteAccount: boolean;
+    preferenceOptions: PreferenceOptions;
+    userPreferences: UserPreferenceValues;
+}>();
 const user = computed(() => page.props.auth.user);
 </script>
 
@@ -89,6 +98,15 @@ const user = computed(() => page.props.auth.user);
                     placeholder="Email address"
                 />
                 <InputError class="mt-2" :message="errors.email" />
+            </div>
+
+            <div class="grid gap-4">
+                <Heading variant="small" title="Preferences" />
+                <FormPreferenceSelectFields
+                    :preferences="userPreferences"
+                    :errors="errors"
+                    :options="preferenceOptions"
+                />
             </div>
 
             <div v-if="page.props.mustVerifyEmail && !user.email_verified_at">
