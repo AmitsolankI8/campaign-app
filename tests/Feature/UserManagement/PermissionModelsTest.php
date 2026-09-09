@@ -1,9 +1,12 @@
 <?php
 
 use App\Models\Permission;
+use App\Models\PreferenceCountry;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\PermissionRegistry;
+use Database\Seeders\CountryUsersSeeder;
+use Database\Seeders\PreferenceSeeder;
 use Database\Seeders\UserManagementSeeder;
 use Illuminate\Database\QueryException;
 
@@ -88,10 +91,40 @@ test('user management seeder stores canonical names and display metadata', funct
         ->and($permission->display_name)->toBe('View users')
         ->and($permission->short_note)->not->toBeEmpty()
         ->and(Permission::count())->toBe(count(PermissionRegistry::names()))
-        ->and(Role::count())->toBe(1)
-        ->and(User::count())->toBe(1)
+        ->and(Role::count())->toBe(2)
+        ->and(User::count())->toBe(2)
         ->and($adminUser->fresh()->first_name)->toBe('Existing')
         ->and($adminUser->fresh()->password)->toBe($password);
+
+    $userRole = Role::findByName('user');
+    $user = User::where('email', 'user@example.com')->firstOrFail();
+
+    expect($userRole->display_name)->toBe('User')
+        ->and($userRole->hasPermissionTo('users.view'))->toBeTrue()
+        ->and($userRole->hasPermissionTo('roles.view'))->toBeTrue()
+        ->and($user->first_name)->toBe('User')
+        ->and($user->last_name)->toBe('User')
+        ->and($user->hasRole($userRole))->toBeTrue();
+});
+
+test('country users seeder creates role users with country preferences', function () {
+    $this->seed(PreferenceSeeder::class);
+    $this->seed(UserManagementSeeder::class);
+    $this->seed(CountryUsersSeeder::class);
+    $this->seed(CountryUsersSeeder::class);
+
+    $countries = PreferenceCountry::query()->pluck('display_name', 'name');
+
+    foreach ($countries as $countryName => $displayName) {
+        $user = User::where('email', "{$countryName}-user@example.com")->firstOrFail();
+
+        expect($user->first_name)->toBe($displayName)
+            ->and($user->last_name)->toBe('User')
+            ->and($user->hasRole('user'))->toBeTrue()
+            ->and($user->preferences->country->name)->toBe($countryName);
+    }
+
+    expect(User::where('email', 'like', '%-user@example.com')->count())->toBe($countries->count());
 });
 
 test('role and permission factories create complete distinct records', function (string $model) {
