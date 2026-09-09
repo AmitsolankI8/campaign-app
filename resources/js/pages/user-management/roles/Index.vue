@@ -8,6 +8,7 @@ import {
     index,
 } from '@/actions/App/Http/Controllers/UserManagement/RoleController';
 import { Button } from '@/components/ui/button';
+import { useDateTimeFormat } from '@/composables/useDateTimeFormat';
 import { usePermissions } from '@/composables/usePermissions';
 
 type RoleRow = {
@@ -16,6 +17,7 @@ type RoleRow = {
     display_name: string;
     short_note: string | null;
     users_count: number;
+    created_at: string | null;
 };
 
 defineProps<{
@@ -34,6 +36,7 @@ defineOptions({
 });
 
 const { hasPermissions } = usePermissions();
+const { formatDate, formatTime } = useDateTimeFormat();
 
 const deleteRole = (role: RoleRow) => {
     if (role.name === 'admin' || !hasPermissions(['roles.delete'])) {
@@ -74,6 +77,7 @@ const deleteRole = (role: RoleRow) => {
                         <th class="px-4 py-3 font-medium">Role</th>
                         <th class="px-4 py-3 font-medium">Short note</th>
                         <th class="px-4 py-3 font-medium">Users</th>
+                        <th class="px-4 py-3 font-medium">Created At</th>
                         <th
                             v-if="
                                 hasPermissions(['roles.edit', 'roles.delete'])
@@ -89,8 +93,8 @@ const deleteRole = (role: RoleRow) => {
                         <td
                             :colspan="
                                 hasPermissions(['roles.edit', 'roles.delete'])
-                                    ? 4
-                                    : 3
+                                    ? 5
+                                    : 4
                             "
                             class="px-4 py-8 text-center text-muted-foreground"
                         >
@@ -111,6 +115,15 @@ const deleteRole = (role: RoleRow) => {
                         </td>
                         <td class="px-4 py-3 text-muted-foreground">
                             {{ role.users_count }}
+                        </td>
+                        <td class="px-4 py-3 text-muted-foreground">
+                            <div v-if="role.created_at" class="space-y-0.5">
+                                <div>{{ formatDate(role.created_at) }}</div>
+                                <div class="text-xs">
+                                    {{ formatTime(role.created_at) }}
+                                </div>
+                            </div>
+                            <span v-else>—</span>
                         </td>
                         <td
                             v-if="

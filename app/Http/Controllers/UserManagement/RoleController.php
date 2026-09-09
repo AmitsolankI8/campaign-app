@@ -22,13 +22,14 @@ class RoleController extends Controller
             'roles' => Role::query()
                 ->withCount('users')
                 ->orderBy('display_name')
-                ->get(['id', 'name', 'display_name', 'short_note'])
+                ->get(['id', 'name', 'display_name', 'short_note', 'created_at'])
                 ->map(fn (Role $role) => [
                     'id' => $role->id,
                     'name' => $role->name,
                     'display_name' => $role->display_name,
                     'short_note' => $role->short_note,
                     'users_count' => $role->users_count,
+                    'created_at' => $role->created_at?->toJSON(),
                 ]),
         ]);
     }

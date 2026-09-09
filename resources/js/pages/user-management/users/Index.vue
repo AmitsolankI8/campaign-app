@@ -39,7 +39,7 @@ defineOptions({
 });
 
 const { hasPermissions } = usePermissions();
-const { formatDate } = useDateTimeFormat();
+const { formatDate, formatTime } = useDateTimeFormat();
 const page = usePage();
 
 const canEditUser = (user: UserRow): boolean =>
@@ -92,7 +92,7 @@ const deleteUser = (user: UserRow) => {
                         <th class="px-4 py-3 font-medium">Name</th>
                         <th class="px-4 py-3 font-medium">Email</th>
                         <th class="px-4 py-3 font-medium">Roles</th>
-                        <th class="px-4 py-3 font-medium">Created</th>
+                        <th class="px-4 py-3 font-medium">Created At</th>
                         <th
                             v-if="showActions"
                             class="w-40 px-4 py-3 text-right font-medium"
@@ -135,7 +135,13 @@ const deleteUser = (user: UserRow) => {
                             </div>
                         </td>
                         <td class="px-4 py-3 text-muted-foreground">
-                            {{ formatDate(user.created_at) ?? '—' }}
+                            <div v-if="user.created_at" class="space-y-0.5">
+                                <div>{{ formatDate(user.created_at) }}</div>
+                                <div class="text-xs">
+                                    {{ formatTime(user.created_at) }}
+                                </div>
+                            </div>
+                            <span v-else>—</span>
                         </td>
                         <td v-if="showActions" class="px-4 py-3">
                             <div class="flex justify-end gap-2">
