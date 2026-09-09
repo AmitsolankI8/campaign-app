@@ -66,9 +66,33 @@ test('management pages expose admin restrictions', function () {
 test('logged in admin receives permission and edit access for their own list row', function () {
     $this->actingAs($this->admin)->get(route('user-management.users.index'))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('auth.user.id', $this->admin->id)
+            ->where('auth.user.id', $this->admin->public_id)
             ->where('auth.permissions', fn ($permissions) => collect($permissions)->contains('users.edit'))
-            ->where('users', fn ($users) => collect($users)->firstWhere('id', $this->admin->id)['can_edit'] === true));
+            ->where('users', fn ($users) => collect($users)->firstWhere('id', $this->admin->public_id)['can_edit'] === true));
+});
+
+test('management payloads expose public ids instead of database ids', function () {
+    $this->actingAs($this->admin)
+        ->get(route('user-management.users.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('auth.user.id', $this->admin->public_id)
+            ->where('auth.user.roles.0.id', $this->adminRole->public_id)
+            ->where('users', fn ($users) => collect($users)->contains(fn ($user) => $user['id'] === $this->admin->public_id)
+                && ! collect($users)->contains(fn ($user) => $user['id'] === (string) $this->admin->id)));
+
+    Permission::factory()->fromRegistry('roles.view')->create();
+    $this->manager->givePermissionTo('roles.view');
+
+    $this->actingAs($this->manager)
+        ->get(route('user-management.roles.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('roles', fn ($roles) => collect($roles)->contains(fn ($role) => $role['id'] === $this->adminRole->public_id)
+                && ! collect($roles)->contains(fn ($role) => $role['id'] === (string) $this->adminRole->id)));
+});
+
+test('numeric database ids do not resolve management routes', function () {
+    $this->get("/user-management/users/{$this->admin->id}/edit")->assertNotFound();
+    $this->get("/user-management/roles/{$this->adminRole->id}/edit")->assertNotFound();
 });
 
 test('other users cannot edit the admin even with direct or inherited permission', function (bool $direct) {
@@ -87,7 +111,7 @@ test('other users cannot edit the admin even with direct or inherited permission
     expect($this->admin->fresh()->only(['first_name', 'email', 'password']))
         ->toBe($this->admin->only(['first_name', 'email', 'password']));
     $this->get(route('user-management.users.index'))->assertInertia(fn (Assert $page) => $page
-        ->where('users', fn ($users) => collect($users)->firstWhere('id', $this->admin->id)['can_edit'] === false));
+        ->where('users', fn ($users) => collect($users)->firstWhere('id', $this->admin->public_id)['can_edit'] === false));
 })->with([true, false]);
 
 test('ordinary users can still be created updated and deleted with inherited permissions', function () {

@@ -174,10 +174,10 @@ test('management indexes return created at values as utc iso strings', function 
         ->get(route('user-management.users.index'))
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('users', fn ($users) => collect($users)->firstWhere('id', $listedUser->id)['created_at'] === '2026-09-09T12:34:56.000000Z'));
+            ->where('users', fn ($users) => collect($users)->firstWhere('id', $listedUser->public_id)['created_at'] === '2026-09-09T12:34:56.000000Z'));
 
     $this->get(route('user-management.roles.index'))
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('roles', fn ($roles) => collect($roles)->firstWhere('id', $role->id)['created_at'] === '2026-09-09T23:45:01.000000Z'));
+            ->where('roles', fn ($roles) => collect($roles)->firstWhere('id', $role->public_id)['created_at'] === '2026-09-09T23:45:01.000000Z'));
 });

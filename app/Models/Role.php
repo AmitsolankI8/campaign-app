@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPublicId;
 use Database\Factories\RoleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Permission\Models\Role as SpatieRole;
 
 /**
  * @property int $id
+ * @property string $public_id
  * @property string $name
  * @property string $display_name
  * @property string|null $short_note
@@ -16,7 +18,7 @@ use Spatie\Permission\Models\Role as SpatieRole;
 class Role extends SpatieRole
 {
     /** @use HasFactory<RoleFactory> */
-    use HasFactory;
+    use HasFactory, HasPublicId;
 
     /** @var list<string> */
     protected $fillable = [
@@ -24,5 +26,10 @@ class Role extends SpatieRole
         'display_name',
         'short_note',
         'guard_name',
+    ];
+
+    /** @var list<string> */
+    protected $hidden = [
+        'id',
     ];
 }

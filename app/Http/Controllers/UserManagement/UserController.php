@@ -5,6 +5,9 @@ namespace App\Http\Controllers\UserManagement;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserManagement\StoreUserRequest;
 use App\Http\Requests\UserManagement\UpdateUserRequest;
+use App\Http\Resources\UserManagement\ManagedUserResource;
+use App\Http\Resources\UserManagement\RoleOptionResource;
+use App\Http\Resources\UserManagement\UserRowResource;
 use App\Models\Role;
 use App\Models\User;
 use App\Settings\SystemSettings;
@@ -24,16 +27,9 @@ class UserController extends Controller
             'users' => User::query()
                 ->with('roles:id,name,display_name')
                 ->latest()
-                ->get(['id', 'first_name', 'last_name', 'email', 'created_at'])
-                ->map(fn (User $user) => [
-                    'id' => $user->id,
-                    'full_name' => $user->full_name,
-                    'email' => $user->email,
-                    'created_at' => $user->created_at?->toJSON(),
-                    'roles' => $user->roles->pluck('display_name')->values(),
-                    'can_delete' => ! $user->hasRole('admin') && ! $user->is(auth()->user()),
-                    'can_edit' => ! $user->hasRole('admin') || $user->is(auth()->user()),
-                ]),
+                ->get(['id', 'public_id', 'first_name', 'last_name', 'email', 'created_at'])
+                ->toResourceCollection(UserRowResource::class)
+                ->resolve(),
         ]);
     }
 
@@ -65,19 +61,10 @@ class UserController extends Controller
 
         abort_if($user->hasRole('admin') && ! $user->is(auth()->user()), 403, __('Only the administrator can edit their own account.'));
 
-        $user->loadMissing('preferences');
+        $user->loadMissing(['preferences', 'roles']);
 
         return Inertia::render('user-management/users/Edit', [
-            'managedUser' => [
-                'id' => $user->id,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'email' => $user->email,
-                'roles' => $user->roles()->pluck('name'),
-                'roles_locked' => $user->hasRole('admin'),
-                'can_edit' => ! $user->hasRole('admin') || $user->is(auth()->user()),
-                'preferences' => PreferenceOptions::values($user->preferences, $settings),
-            ],
+            'managedUser' => (new ManagedUserResource($user, $settings))->resolve(),
             'roles' => $this->roles(),
             'preferenceOptions' => PreferenceOptions::forForms(),
             'defaultPreferences' => PreferenceOptions::defaults($settings),
@@ -130,10 +117,7 @@ class UserController extends Controller
         return Role::query()
             ->orderBy('display_name')
             ->get(['name', 'display_name'])
-            ->map(fn (Role $role) => [
-                'name' => $role->name,
-                'display_name' => $role->display_name,
-            ])
-            ->all();
+            ->toResourceCollection(RoleOptionResource::class)
+            ->resolve();
     }
 }

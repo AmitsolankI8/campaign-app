@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Resources\AuthUserResource;
 use App\Support\PermissionRegistry;
 use App\Support\UserPreferences;
 use Illuminate\Http\Request;
@@ -37,11 +38,13 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => fn () => config('app.name', 'Laravel'),
             'auth' => [
-                'user' => $request->user()?->loadMissing('roles'),
+                'user' => fn () => $user?->loadMissing('roles')->toResource(AuthUserResource::class)->resolve(),
                 'preferences' => fn () => UserPreferences::forUser($request->user()),
                 'permissions' => fn () => array_values(array_filter(
                     PermissionRegistry::names(),

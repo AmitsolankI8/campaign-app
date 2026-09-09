@@ -9,6 +9,7 @@ use App\Settings\SystemSettings;
 use App\Support\PermissionRegistry;
 use App\Support\PreferenceOptions;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use Spatie\Permission\PermissionRegistrar;
 
 class UserManagementSeeder extends Seeder
@@ -29,18 +30,24 @@ class UserManagementSeeder extends Seeder
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $adminRole = Role::query()->updateOrCreate(['name' => 'admin', 'guard_name' => 'web'], Role::factory()->make([
+        $adminRole = Role::query()->firstOrNew(['name' => 'admin', 'guard_name' => 'web']);
+        $adminRole->fill(Role::factory()->make([
             'name' => 'admin',
             'display_name' => 'Administrator',
             'short_note' => 'Full access to application administration.',
         ])->getAttributes());
+        $adminRole->public_id ??= (string) Str::ulid();
+        $adminRole->save();
         $adminRole->syncPermissions($permissions);
 
-        $userRole = Role::query()->updateOrCreate(['name' => 'user', 'guard_name' => 'web'], Role::factory()->make([
+        $userRole = Role::query()->firstOrNew(['name' => 'user', 'guard_name' => 'web']);
+        $userRole->fill(Role::factory()->make([
             'name' => 'user',
             'display_name' => 'User',
             'short_note' => 'List access for users and roles.',
         ])->getAttributes());
+        $userRole->public_id ??= (string) Str::ulid();
+        $userRole->save();
         $userRole->syncPermissions($permissions->whereIn('name', ['users.view', 'roles.view']));
 
         $adminUser = User::role($adminRole)->first()

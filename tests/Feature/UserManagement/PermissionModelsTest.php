@@ -63,6 +63,22 @@ test('creating roles and permissions preserves explicit display names', function
         ->and($permission->fresh()->display_name)->toBe('Export user records');
 });
 
+test('users and roles generate public ids and use them for route keys', function () {
+    $user = User::factory()->create(['public_id' => null]);
+    $role = Role::factory()->create(['public_id' => null]);
+
+    expect($user->public_id)->toMatch('/^[0-7][0-9a-hjkmnp-tv-z]{25}$/')
+        ->and($role->public_id)->toMatch('/^[0-7][0-9a-hjkmnp-tv-z]{25}$/')
+        ->and($user->getRouteKeyName())->toBe('public_id')
+        ->and($role->getRouteKeyName())->toBe('public_id')
+        ->and($user->getRouteKey())->toBe($user->public_id)
+        ->and($role->getRouteKey())->toBe($role->public_id)
+        ->and($user->toArray())->toHaveKey('public_id')
+        ->and($user->toArray())->not->toHaveKey('id')
+        ->and($role->toArray())->toHaveKey('public_id')
+        ->and($role->toArray())->not->toHaveKey('id');
+});
+
 test('user full name is exposed to the application and passkeys', function () {
     $user = User::factory()->make([
         'first_name' => 'Admin',
@@ -77,6 +93,7 @@ test('user full name is exposed to the application and passkeys', function () {
 test('user management seeder stores canonical names and display metadata', function () {
     $this->seed(UserManagementSeeder::class);
     $adminUser = User::where('email', 'admin@example.com')->firstOrFail();
+    $adminPublicId = $adminUser->public_id;
     $adminUser->update(['first_name' => 'Existing', 'password' => 'changed-password']);
     $password = $adminUser->password;
     $this->seed(UserManagementSeeder::class);
@@ -94,7 +111,9 @@ test('user management seeder stores canonical names and display metadata', funct
         ->and(Role::count())->toBe(2)
         ->and(User::count())->toBe(2)
         ->and($adminUser->fresh()->first_name)->toBe('Existing')
-        ->and($adminUser->fresh()->password)->toBe($password);
+        ->and($adminUser->fresh()->password)->toBe($password)
+        ->and($adminUser->fresh()->public_id)->toBe($adminPublicId)
+        ->and($role->public_id)->not->toBeEmpty();
 
     $userRole = Role::findByName('user');
     $user = User::where('email', 'user@example.com')->firstOrFail();
@@ -104,6 +123,8 @@ test('user management seeder stores canonical names and display metadata', funct
         ->and($userRole->hasPermissionTo('roles.view'))->toBeTrue()
         ->and($user->first_name)->toBe('User')
         ->and($user->last_name)->toBe('User')
+        ->and($user->public_id)->not->toBeEmpty()
+        ->and($userRole->public_id)->not->toBeEmpty()
         ->and($user->hasRole($userRole))->toBeTrue();
 });
 

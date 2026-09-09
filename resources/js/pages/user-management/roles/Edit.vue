@@ -5,7 +5,7 @@ import type { PermissionGroups } from '../types';
 import RoleForm from './Form.vue';
 
 type ManagedRole = {
-    id: number;
+    id: string;
     name: string;
     display_name: string;
     short_note: string | null;

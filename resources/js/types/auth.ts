@@ -1,7 +1,7 @@
 import type { UserPreferences } from '@/types/preferences';
 
 export type Role = {
-    id: number;
+    id: string;
     name: string;
     display_name: string | null;
     short_note: string | null;
@@ -9,7 +9,7 @@ export type Role = {
 };
 
 export type User = {
-    id: number;
+    id: string;
     first_name: string;
     last_name: string;
     full_name: string;

@@ -12,7 +12,7 @@ import { useDateTimeFormat } from '@/composables/useDateTimeFormat';
 import { usePermissions } from '@/composables/usePermissions';
 
 type RoleRow = {
-    id: number;
+    id: string;
     name: string;
     display_name: string;
     short_note: string | null;

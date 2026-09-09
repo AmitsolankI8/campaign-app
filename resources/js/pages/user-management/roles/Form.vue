@@ -23,7 +23,7 @@ import PermissionCheckboxTable from '../components/PermissionCheckboxTable.vue';
 import type { PermissionGroups } from '../types';
 
 type ManagedRole = {
-    id: number;
+    id: string;
     name: string;
     display_name: string;
     short_note: string | null;

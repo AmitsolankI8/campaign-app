@@ -14,7 +14,7 @@ import { useDateTimeFormat } from '@/composables/useDateTimeFormat';
 import { usePermissions } from '@/composables/usePermissions';
 
 type UserRow = {
-    id: number;
+    id: string;
     full_name: string;
     email: string;
     created_at: string | null;

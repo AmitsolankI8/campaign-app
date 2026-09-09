@@ -5,6 +5,8 @@ namespace App\Http\Controllers\UserManagement;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserManagement\StoreRoleRequest;
 use App\Http\Requests\UserManagement\UpdateRoleRequest;
+use App\Http\Resources\UserManagement\ManagedRoleResource;
+use App\Http\Resources\UserManagement\RoleRowResource;
 use App\Models\Role;
 use App\Support\PermissionRegistry;
 use Illuminate\Http\RedirectResponse;
@@ -22,15 +24,9 @@ class RoleController extends Controller
             'roles' => Role::query()
                 ->withCount('users')
                 ->orderBy('display_name')
-                ->get(['id', 'name', 'display_name', 'short_note', 'created_at'])
-                ->map(fn (Role $role) => [
-                    'id' => $role->id,
-                    'name' => $role->name,
-                    'display_name' => $role->display_name,
-                    'short_note' => $role->short_note,
-                    'users_count' => $role->users_count,
-                    'created_at' => $role->created_at?->toJSON(),
-                ]),
+                ->get(['id', 'public_id', 'name', 'display_name', 'short_note', 'created_at'])
+                ->toResourceCollection(RoleRowResource::class)
+                ->resolve(),
         ]);
     }
 
@@ -57,14 +53,10 @@ class RoleController extends Controller
     {
         Gate::authorize('roles.edit');
 
+        $role->loadMissing('permissions');
+
         return Inertia::render('user-management/roles/Edit', [
-            'role' => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'display_name' => $role->display_name,
-                'short_note' => $role->short_note,
-                'permissions' => $role->permissions()->pluck('name'),
-            ],
+            'role' => $role->toResource(ManagedRoleResource::class)->resolve(),
             'permissionGroups' => PermissionRegistry::groups(),
         ]);
     }

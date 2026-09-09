@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Concerns\HasPublicId;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property int $id
+ * @property string $public_id
  * @property string $first_name
  * @property string $last_name
  * @property-read string $full_name
@@ -34,7 +36,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasFactory, HasPublicId, HasRoles, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /** @var list<string> */
     protected $appends = [
@@ -51,6 +53,7 @@ class User extends Authenticatable implements PasskeyUser
 
     /** @var list<string> */
     protected $hidden = [
+        'id',
         'password',
         'two_factor_secret',
         'two_factor_recovery_codes',
