@@ -2,6 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import { LayoutGrid, Settings, UsersRound } from '@lucide/vue';
 import { computed } from 'vue';
+import { index as communicationIndex } from '@/actions/App/Http/Controllers/Settings/CommunicationSettingsController';
 import { index as preferencesIndex } from '@/actions/App/Http/Controllers/Settings/PreferencesController';
 import { edit as systemSettingsEdit } from '@/actions/App/Http/Controllers/Settings/SystemSettingsController';
 import { index as rolesIndex } from '@/actions/App/Http/Controllers/UserManagement/RoleController';
@@ -54,12 +55,21 @@ const mainNavItems = computed<NavItem[]>(() => [
         title: 'Settings',
         href: systemSettingsEdit(),
         icon: Settings,
-        isVisible: hasPermissions(['system-settings.view', 'preferences.view']),
+        isVisible: hasPermissions([
+            'system-settings.view',
+            'preferences.view',
+            'communication.view',
+        ]),
         children: [
             {
                 title: 'System',
                 href: systemSettingsEdit(),
                 isVisible: hasPermissions(['system-settings.view']),
+            },
+            {
+                title: 'Communication',
+                href: communicationIndex(),
+                isVisible: hasPermissions(['communication.view']),
             },
             {
                 title: 'Preferences',

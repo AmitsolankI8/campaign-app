@@ -19,3 +19,12 @@
 - Models that expose records to the client should keep numeric `id` values internal and expose the model `public_id` as the frontend `id` through Laravel resources.
 - Use `App\Models\Concerns\HasPublicId` for models with a `public_id` column so ULIDs are generated automatically and route model binding resolves by `public_id`.
 - When seeding through `WithoutModelEvents`, explicitly provide `public_id` values because automatic ULID generation depends on model events.
+
+# Communication registry and seeding
+
+- Define communication channels, providers, credential fields, validation rules, and select options in `App\Support\CommunicationRegistry`. Add definitions there and run `php artisan db:seed --class=CommunicationSeeder`; keep the seeder independent from preference and permission seeders.
+- `CommunicationSeeder` syncs registered metadata and creates missing provider records. Preserve existing credentials, activation status, priority, and public IDs when reseeding. Do not automatically delete records absent from the registry. Keep channel, provider, and credential field keys stable.
+- Read communication settings and field definitions from seeded database records at runtime. Settings requests may update only credentials, status, and priority; they must not create provider records or change registered metadata.
+- Keep credentials encrypted with `encrypted:array`. Never expose saved secrets in resources or flash them into validation input. Blank submitted secrets preserve their saved values.
+- Seed Communication test fixtures with `CommunicationSeeder`. Derive catalog counts and provider datasets from `CommunicationRegistry`, locate rows by channel/provider keys, and retain explicit provider fixtures for credential-specific behavior. Cover reseeding, metadata refresh, permission denial, and secret preservation.
+- Communication permissions remain in `PermissionRegistry` and are seeded by `UserManagementSeeder`. Do not reference removed per-setting permission seeders. `UserManagementSeeder` also manages default users, roles, and preferences; it is not a provider-only sync command.

@@ -8,7 +8,7 @@ use App\Models\PreferenceTimezone;
 use App\Models\Role;
 use App\Models\User;
 use App\Settings\SystemSettings;
-use Database\Seeders\SystemSettingsPermissionSeeder;
+use Database\Seeders\UserManagementSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -31,12 +31,12 @@ function alternateDefaultPreferencePayload(): array
     ];
 }
 
-test('settings permissions can be added without replacing existing admin grants', function () {
+test('user management seeding assigns registered system settings permissions to admins', function () {
     Permission::factory()->fromRegistry('users.view')->create();
     $role = Role::factory()->create(['name' => 'admin']);
     $role->givePermissionTo('users.view');
-    $this->seed(SystemSettingsPermissionSeeder::class);
-    $this->seed(SystemSettingsPermissionSeeder::class);
+    $this->seed(UserManagementSeeder::class);
+    $this->seed(UserManagementSeeder::class);
     expect($role->fresh()->hasAllPermissions(['users.view', 'system-settings.view', 'system-settings.edit']))->toBeTrue();
 });
 

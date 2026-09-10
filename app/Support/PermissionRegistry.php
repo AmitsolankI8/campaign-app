@@ -12,6 +12,10 @@ class PermissionRegistry
     public static function groups(): array
     {
         return [
+            'Communication' => [
+                ['name' => 'communication.view', 'display_name' => 'View communication settings', 'short_note' => 'View communication channels and providers.'],
+                ['name' => 'communication.edit', 'display_name' => 'Edit communication settings', 'short_note' => 'Manage provider activation, credentials, and priority.'],
+            ],
             'System settings' => [
                 ['name' => 'system-settings.view', 'display_name' => 'View system settings', 'short_note' => 'View system-wide settings.'],
                 ['name' => 'system-settings.edit', 'display_name' => 'Edit system settings', 'short_note' => 'Update system-wide settings.'],
