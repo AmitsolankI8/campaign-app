@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { LayoutGrid, Settings, UsersRound } from '@lucide/vue';
+import { LayoutGrid, Megaphone, Settings, UsersRound } from '@lucide/vue';
 import { computed } from 'vue';
+import { index as campaignsIndex } from '@/actions/App/Http/Controllers/CampaignController';
 import { index as communicationIndex } from '@/actions/App/Http/Controllers/Settings/CommunicationSettingsController';
 import { index as preferencesIndex } from '@/actions/App/Http/Controllers/Settings/PreferencesController';
 import { edit as systemSettingsEdit } from '@/actions/App/Http/Controllers/Settings/SystemSettingsController';
@@ -32,6 +33,12 @@ const mainNavItems = computed<NavItem[]>(() => [
         href: dashboard(),
         icon: LayoutGrid,
         isVisible: true,
+    },
+    {
+        title: 'Campaigns',
+        href: campaignsIndex(),
+        icon: Megaphone,
+        isVisible: hasPermissions(['campaigns.view']),
     },
     {
         title: 'User Management',

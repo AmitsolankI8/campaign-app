@@ -20,6 +20,14 @@
 - Use `App\Models\Concerns\HasPublicId` for models with a `public_id` column so ULIDs are generated automatically and route model binding resolves by `public_id`.
 - When seeding through `WithoutModelEvents`, explicitly provide `public_id` values because automatic ULID generation depends on model events.
 
+# Integer-backed types
+
+- When a model stores a multi-option type/status/category as an integer, define a PHP backed enum for that field instead of putting type constants and labels directly on the model.
+- Keep the database column integer-backed and cast it to the enum on the Eloquent model. Put the enum value, stable frontend key, label, options list, and allowed values on the enum.
+- Laravel resources should expose a single nested payload such as `type: { value, key, label }`. Do not add one boolean per type, such as `is_once_off`, because that grows poorly as new types are added.
+- Frontend modules should keep one matching constants/types file for stable keys, such as `CAMPAIGN_TYPE_KEY.onceOff = 'once_off'`, and compare against `record.type.key`. Do not compare labels, and avoid scattering raw integer checks through Vue files.
+- When adding a new type later, update the backend enum and the matching frontend constants/types file first, then wire only the screens that need type-specific behavior.
+
 # Communication registry and seeding
 
 - Define communication channels, providers, credential fields, validation rules, and select options in `App\Support\CommunicationRegistry`. Add definitions there and run `php artisan db:seed --class=CommunicationSeeder`; keep the seeder independent from preference and permission seeders.

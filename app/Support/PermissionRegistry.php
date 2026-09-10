@@ -12,6 +12,11 @@ class PermissionRegistry
     public static function groups(): array
     {
         return [
+            'Campaigns' => [
+                ['name' => 'campaigns.view', 'display_name' => 'View campaigns', 'short_note' => 'View campaign lists and campaign details.'],
+                ['name' => 'campaigns.create', 'display_name' => 'Create campaigns', 'short_note' => 'Create new campaigns.'],
+                ['name' => 'campaigns.edit', 'display_name' => 'Edit campaigns', 'short_note' => 'Update campaign names and short notes.'],
+            ],
             'Communication' => [
                 ['name' => 'communication.view', 'display_name' => 'View communication settings', 'short_note' => 'View communication channels and providers.'],
                 ['name' => 'communication.edit', 'display_name' => 'Edit communication settings', 'short_note' => 'Manage provider activation, credentials, and priority.'],
