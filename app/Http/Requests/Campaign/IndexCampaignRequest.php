@@ -49,8 +49,8 @@ class IndexCampaignRequest extends DataTableRequest
     {
         return [
             'name' => 'name',
-            'short_note' => 'short_note',
             'type' => 'campaign_type',
+            'short_note' => 'short_note',
             'created_at' => 'created_at',
         ];
     }

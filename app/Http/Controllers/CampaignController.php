@@ -24,7 +24,7 @@ class CampaignController extends Controller
         return Inertia::render('campaigns/Index', [
             'campaignTypes' => fn () => CampaignType::options(),
             'campaigns' => fn () => DataTable::make(
-                Campaign::query()->select(['id', 'public_id', 'name', 'short_note', 'campaign_type', 'created_at']),
+                Campaign::query()->select(['id', 'public_id', 'name', 'campaign_type', 'short_note', 'created_at']),
                 $request,
                 CampaignRowResource::class,
             ),
@@ -46,16 +46,14 @@ class CampaignController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Campaign created.')]);
 
-        return to_route('campaigns.show', $campaign);
+        return to_route($campaign->campaign_type->showRouteName(), $campaign);
     }
 
-    public function show(Campaign $campaign): Response
+    public function show(Campaign $campaign): RedirectResponse
     {
         Gate::authorize('campaigns.view');
 
-        return Inertia::render('campaigns/Show', [
-            'campaign' => $campaign->toResource(CampaignResource::class)->resolve(),
-        ]);
+        return to_route($campaign->campaign_type->showRouteName(), $campaign);
     }
 
     public function edit(Campaign $campaign): Response
@@ -73,6 +71,6 @@ class CampaignController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Campaign updated.')]);
 
-        return to_route('campaigns.show', $campaign);
+        return to_route($campaign->campaign_type->showRouteName(), $campaign);
     }
 }

@@ -26,6 +26,15 @@ enum CampaignType: int
         };
     }
 
+    public function showRouteName(): string
+    {
+        return match ($this) {
+            self::OnceOff => 'campaigns.once-off.show',
+            self::Ongoing => 'campaigns.ongoing.show',
+            self::BatchProcessing => 'campaigns.batch-processing.show',
+        };
+    }
+
     /**
      * @return list<int>
      */

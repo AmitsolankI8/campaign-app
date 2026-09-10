@@ -9,7 +9,6 @@ import {
 } from '@lucide/vue';
 import { ref } from 'vue';
 import { edit, index } from '@/actions/App/Http/Controllers/CampaignController';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -18,10 +17,9 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { useDateTimeFormat } from '@/composables/useDateTimeFormat';
 import { usePermissions } from '@/composables/usePermissions';
-import { CAMPAIGN_TYPE_KEY } from './types';
-import type { Campaign } from './types';
+import CampaignBasicDetails from '../components/CampaignBasicDetails.vue';
+import type { Campaign } from '../types';
 
 defineProps<{
     campaign: Campaign;
@@ -35,7 +33,7 @@ defineOptions({
                 href: index(),
             },
             {
-                title: 'Campaign details',
+                title: 'Once-Off campaign',
                 href: index(),
             },
         ],
@@ -43,7 +41,6 @@ defineOptions({
 });
 
 const { hasPermissions } = usePermissions();
-const { formatDateTime } = useDateTimeFormat();
 const selectedTab = ref('summary');
 
 const tabs = [
@@ -83,51 +80,10 @@ const tabs = [
             </div>
         </div>
 
-        <Card>
-            <CardHeader>
-                <div class="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <CardTitle>Basic details</CardTitle>
-                        <CardDescription>
-                            {{ campaign.short_note || 'No short note' }}
-                        </CardDescription>
-                    </div>
-                    <Badge variant="secondary">
-                        {{ campaign.type.label }}
-                    </Badge>
-                </div>
-            </CardHeader>
-            <CardContent
-                class="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4"
-            >
-                <div class="rounded-lg border p-4">
-                    <div class="text-muted-foreground">Campaign ID</div>
-                    <div class="mt-1 font-medium">{{ campaign.id }}</div>
-                </div>
-                <div class="rounded-lg border p-4">
-                    <div class="text-muted-foreground">Type flow</div>
-                    <div class="mt-1 font-medium">
-                        {{
-                            campaign.type.key === CAMPAIGN_TYPE_KEY.onceOff
-                                ? 'Once-Off'
-                                : 'Pending'
-                        }}
-                    </div>
-                </div>
-                <div class="rounded-lg border p-4">
-                    <div class="text-muted-foreground">Created</div>
-                    <div class="mt-1 font-medium">
-                        {{ formatDateTime(campaign.created_at) || '-' }}
-                    </div>
-                </div>
-                <div class="rounded-lg border p-4">
-                    <div class="text-muted-foreground">Updated</div>
-                    <div class="mt-1 font-medium">
-                        {{ formatDateTime(campaign.updated_at) || '-' }}
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+        <CampaignBasicDetails
+            :campaign="campaign"
+            :type-flow-label="campaign.type.label"
+        />
 
         <section class="space-y-4" aria-label="Campaign sections">
             <nav class="flex flex-wrap gap-2" aria-label="Campaign tabs">

@@ -23,8 +23,8 @@ class Campaign extends Model
     /** @var list<string> */
     protected $fillable = [
         'name',
-        'short_note',
         'campaign_type',
+        'short_note',
     ];
 
     /** @var list<string> */

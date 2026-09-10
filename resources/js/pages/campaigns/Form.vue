@@ -2,7 +2,6 @@
 import { Link, useForm } from '@inertiajs/vue3';
 import {
     index,
-    show,
     store,
     update,
 } from '@/actions/App/Http/Controllers/CampaignController';
@@ -39,8 +38,8 @@ const isEditing = Boolean(props.campaign);
 
 const form = useForm({
     name: props.campaign?.name ?? '',
-    short_note: props.campaign?.short_note ?? '',
     campaign_type: String(props.campaign?.type.value ?? ''),
+    short_note: props.campaign?.short_note ?? '',
 });
 
 const submit = () => {
@@ -146,7 +145,7 @@ const submit = () => {
                 <Link
                     :href="
                         campaign && hasPermissions(['campaigns.view'])
-                            ? show.url(campaign.id)
+                            ? campaign.show_url
                             : hasPermissions(['campaigns.view'])
                               ? index.url()
                               : dashboard.url()

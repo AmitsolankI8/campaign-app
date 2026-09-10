@@ -19,8 +19,9 @@ class CampaignRowResource extends JsonResource
         return [
             'id' => $this->public_id,
             'name' => $this->name,
-            'short_note' => $this->short_note,
             'type' => $this->campaign_type->toArray(),
+            'short_note' => $this->short_note,
+            'show_url' => route($this->campaign_type->showRouteName(), $this->resource),
             'created_at' => $this->created_at?->toJSON(),
         ];
     }

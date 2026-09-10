@@ -24,6 +24,7 @@ export type Campaign = {
     name: string;
     short_note: string | null;
     type: CampaignTypePayload;
+    show_url: string;
     created_at: string | null;
     updated_at: string | null;
 };

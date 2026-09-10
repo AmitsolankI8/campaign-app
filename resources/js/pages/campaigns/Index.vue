@@ -5,7 +5,6 @@ import { computed } from 'vue';
 import {
     create,
     index,
-    show,
 } from '@/actions/App/Http/Controllers/CampaignController';
 import DataTable from '@/components/data-table/DataTable.vue';
 import { Badge } from '@/components/ui/badge';
@@ -41,12 +40,12 @@ const { hasPermissions } = usePermissions();
 
 const columns = computed<DataTableColumn<CampaignRow>[]>(() => [
     { key: 'name', label: 'Name', cellClass: 'font-medium' },
+    { key: 'type', label: 'Campaign type' },
     {
         key: 'short_note',
         label: 'Short note',
         cellClass: 'text-muted-foreground',
     },
-    { key: 'type', label: 'Campaign type' },
     {
         key: 'created_at',
         label: 'Created At',
@@ -134,7 +133,7 @@ const columns = computed<DataTableColumn<CampaignRow>[]>(() => [
                         variant="outline"
                         as-child
                     >
-                        <Link :href="show.url(campaign.id)">
+                        <Link :href="campaign.show_url">
                             <Eye class="size-4" />
                             View
                         </Link>
