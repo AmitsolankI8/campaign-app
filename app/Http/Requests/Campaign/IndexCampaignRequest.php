@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Campaign;
 
+use App\Enums\CampaignStatus;
 use App\Enums\CampaignType;
 use App\Http\Requests\DataTableRequest;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,18 +17,28 @@ class IndexCampaignRequest extends DataTableRequest
 
     public function filterRules(): array
     {
-        return ['type' => ['nullable', 'integer', Rule::in(CampaignType::values())]];
+        return [
+            'type' => ['nullable', 'integer', Rule::in(CampaignType::values())],
+            'status' => ['nullable', 'integer', Rule::in(CampaignStatus::values())],
+        ];
     }
 
     public function filterDefaults(): array
     {
-        return ['type' => null];
+        return [
+            'type' => null,
+            'status' => null,
+        ];
     }
 
     public function applyFilters(Builder $query, array $filters): void
     {
         if ($filters['type'] !== null) {
             $query->where('campaign_type', $filters['type']);
+        }
+
+        if ($filters['status'] !== null) {
+            $query->where('status', $filters['status']);
         }
     }
 
@@ -50,6 +61,7 @@ class IndexCampaignRequest extends DataTableRequest
         return [
             'name' => 'name',
             'type' => 'campaign_type',
+            'status' => 'status',
             'short_note' => 'short_note',
             'created_at' => 'created_at',
         ];

@@ -28,7 +28,7 @@ const { formatDateTime } = useDateTimeFormat();
                     </CardDescription>
                 </div>
                 <Badge variant="secondary">
-                    {{ campaign.type.label }}
+                    {{ campaign.status.label }}
                 </Badge>
             </div>
         </CardHeader>

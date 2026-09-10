@@ -28,6 +28,17 @@
 - Frontend modules should keep one matching constants/types file for stable keys, such as `CAMPAIGN_TYPE_KEY.onceOff = 'once_off'`, and compare against `record.type.key`. Do not compare labels, and avoid scattering raw integer checks through Vue files.
 - When adding a new type later, update the backend enum and the matching frontend constants/types file first, then wire only the screens that need type-specific behavior.
 
+# Campaign module
+
+- Keep `campaign_type` and `status` integer-backed. Use `App\Enums\CampaignType` and `App\Enums\CampaignStatus`, cast both fields on `Campaign`, expose both as `{ value, key, label }`, and keep matching keys/types in `resources/js/pages/campaigns/types.ts`.
+- Campaign status defaults to draft. Keep the default centralized through `CampaignStatus::DEFAULT` and mirror it in both the migration and `Campaign` model attributes.
+- Keep `CampaignController` responsible for index/create/store/edit/update and use its `show` method only as a dispatcher to the type-specific show route.
+- Put type-specific campaign view behavior in dedicated controllers and Vue pages. Add new routes through `CampaignType::showRouteName()` so Laravel resources can expose a single `show_url` and Vue does not need to build type-based URLs.
+- Campaign index must use the shared datatable. Search only `name` and `short_note`; use extra filters for campaign type and status. The index action should show only a view action unless campaign actions are explicitly expanded.
+- Campaign create accepts `name`, `short_note`, and `campaign_type`; edit accepts only `name` and `short_note`. Do not allow edit flows to change campaign type or status until a status workflow is explicitly added.
+- Once-off campaigns currently own the tabs in this order: Summary, Contacts, Upload Contacts, Schedule. Keep tab UI as presentation-only until table/model instructions are provided for those sections.
+- Cover campaign changes with feature tests for permission denial/grants, datatable search/filter validation, resource payloads, default status, update restrictions, and type-specific show routing.
+
 # Communication registry and seeding
 
 - Define communication channels, providers, credential fields, validation rules, and select options in `App\Support\CommunicationRegistry`. Add definitions there and run `php artisan db:seed --class=CommunicationSeeder`; keep the seeder independent from preference and permission seeders.

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CampaignStatus;
 use App\Enums\CampaignType;
 use App\Http\Requests\Campaign\IndexCampaignRequest;
 use App\Http\Requests\Campaign\StoreCampaignRequest;
@@ -23,8 +24,9 @@ class CampaignController extends Controller
 
         return Inertia::render('campaigns/Index', [
             'campaignTypes' => fn () => CampaignType::options(),
+            'campaignStatuses' => fn () => CampaignStatus::options(),
             'campaigns' => fn () => DataTable::make(
-                Campaign::query()->select(['id', 'public_id', 'name', 'campaign_type', 'short_note', 'created_at']),
+                Campaign::query()->select(['id', 'public_id', 'name', 'campaign_type', 'status', 'short_note', 'created_at']),
                 $request,
                 CampaignRowResource::class,
             ),

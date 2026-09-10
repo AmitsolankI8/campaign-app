@@ -18,11 +18,16 @@ import {
 } from '@/components/ui/select';
 import { usePermissions } from '@/composables/usePermissions';
 import type { DataTableColumn, DataTableData } from '@/types/data-table';
-import type { CampaignRow, CampaignTypeOption } from './types';
+import type {
+    CampaignRow,
+    CampaignStatusOption,
+    CampaignTypeOption,
+} from './types';
 
 defineProps<{
     campaigns: DataTableData<CampaignRow>;
     campaignTypes: CampaignTypeOption[];
+    campaignStatuses: CampaignStatusOption[];
 }>();
 
 defineOptions({
@@ -41,6 +46,7 @@ const { hasPermissions } = usePermissions();
 const columns = computed<DataTableColumn<CampaignRow>[]>(() => [
     { key: 'name', label: 'Name', cellClass: 'font-medium' },
     { key: 'type', label: 'Campaign type' },
+    { key: 'status', label: 'Status' },
     {
         key: 'short_note',
         label: 'Short note',
@@ -92,37 +98,70 @@ const columns = computed<DataTableColumn<CampaignRow>[]>(() => [
             empty-message="No campaigns found."
         >
             <template #extra-filters="{ filters, loading }">
-                <Select
-                    :model-value="String(filters.type ?? '__all')"
-                    :disabled="loading"
-                    @update:model-value="
-                        filters.type =
-                            $event === '__all' ? null : Number($event)
-                    "
-                >
-                    <SelectTrigger
-                        class="w-52"
-                        aria-label="Filter by campaign type"
+                <div class="flex flex-wrap gap-2">
+                    <Select
+                        :model-value="String(filters.type ?? '__all')"
+                        :disabled="loading"
+                        @update:model-value="
+                            filters.type =
+                                $event === '__all' ? null : Number($event)
+                        "
                     >
-                        <SelectValue placeholder="All campaign types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="__all"
-                            >All campaign types</SelectItem
+                        <SelectTrigger
+                            class="w-52"
+                            aria-label="Filter by campaign type"
                         >
-                        <SelectItem
-                            v-for="type in campaignTypes"
-                            :key="type.key"
-                            :value="String(type.value)"
+                            <SelectValue placeholder="All campaign types" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="__all"
+                                >All campaign types</SelectItem
+                            >
+                            <SelectItem
+                                v-for="type in campaignTypes"
+                                :key="type.key"
+                                :value="String(type.value)"
+                            >
+                                {{ type.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Select
+                        :model-value="String(filters.status ?? '__all')"
+                        :disabled="loading"
+                        @update:model-value="
+                            filters.status =
+                                $event === '__all' ? null : Number($event)
+                        "
+                    >
+                        <SelectTrigger
+                            class="w-44"
+                            aria-label="Filter by campaign status"
                         >
-                            {{ type.label }}
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
+                            <SelectValue placeholder="All statuses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="__all">All statuses</SelectItem>
+                            <SelectItem
+                                v-for="status in campaignStatuses"
+                                :key="status.key"
+                                :value="String(status.value)"
+                            >
+                                {{ status.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </template>
             <template #cell-type="{ row: campaign }">
                 <Badge variant="secondary">
                     {{ campaign.type.label }}
+                </Badge>
+            </template>
+            <template #cell-status="{ row: campaign }">
+                <Badge variant="secondary">
+                    {{ campaign.status.label }}
                 </Badge>
             </template>
             <template #cell-actions="{ row: campaign }">
