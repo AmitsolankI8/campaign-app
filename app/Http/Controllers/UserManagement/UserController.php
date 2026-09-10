@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\UserManagement;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UserManagement\IndexUserRequest;
 use App\Http\Requests\UserManagement\StoreUserRequest;
 use App\Http\Requests\UserManagement\UpdateUserRequest;
 use App\Http\Resources\UserManagement\ManagedUserResource;
@@ -11,6 +12,7 @@ use App\Http\Resources\UserManagement\UserRowResource;
 use App\Models\Role;
 use App\Models\User;
 use App\Settings\SystemSettings;
+use App\Support\DataTable;
 use App\Support\PreferenceOptions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -19,17 +21,19 @@ use Inertia\Response;
 
 class UserController extends Controller
 {
-    public function index(): Response
+    public function index(IndexUserRequest $request): Response
     {
         Gate::authorize('users.view');
 
         return Inertia::render('user-management/users/Index', [
-            'users' => User::query()
-                ->with('roles:id,name,display_name')
-                ->latest()
-                ->get(['id', 'public_id', 'first_name', 'last_name', 'email', 'created_at'])
-                ->toResourceCollection(UserRowResource::class)
-                ->resolve(),
+            'roleOptions' => fn () => $this->roles(),
+            'users' => fn () => DataTable::make(
+                User::query()
+                    ->select(['id', 'public_id', 'first_name', 'last_name', 'email', 'created_at'])
+                    ->with('roles:id,name,display_name'),
+                $request,
+                UserRowResource::class,
+            ),
         ]);
     }
 

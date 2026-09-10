@@ -59,7 +59,7 @@ test('admin cannot be deleted from management or profile settings', function () 
 });
 
 test('management pages expose admin restrictions', function () {
-    $this->get(route('user-management.users.index'))->assertInertia(fn (Assert $page) => $page->where('users', fn ($users) => collect($users)->every(fn ($user) => $user['can_delete'] === false)));
+    $this->get(route('user-management.users.index'))->assertInertia(fn (Assert $page) => $page->where('users.data', fn ($users) => collect($users)->every(fn ($user) => $user['can_delete'] === false)));
     $this->actingAs($this->admin)->get(route('user-management.users.edit', $this->admin))->assertInertia(fn (Assert $page) => $page->where('managedUser.roles_locked', true)->where('managedUser.can_edit', true));
 });
 
@@ -68,7 +68,7 @@ test('logged in admin receives permission and edit access for their own list row
         ->assertInertia(fn (Assert $page) => $page
             ->where('auth.user.id', $this->admin->public_id)
             ->where('auth.permissions', fn ($permissions) => collect($permissions)->contains('users.edit'))
-            ->where('users', fn ($users) => collect($users)->firstWhere('id', $this->admin->public_id)['can_edit'] === true));
+            ->where('users.data', fn ($users) => collect($users)->firstWhere('id', $this->admin->public_id)['can_edit'] === true));
 });
 
 test('management payloads expose public ids instead of database ids', function () {
@@ -77,7 +77,7 @@ test('management payloads expose public ids instead of database ids', function (
         ->assertInertia(fn (Assert $page) => $page
             ->where('auth.user.id', $this->admin->public_id)
             ->where('auth.user.roles.0.id', $this->adminRole->public_id)
-            ->where('users', fn ($users) => collect($users)->contains(fn ($user) => $user['id'] === $this->admin->public_id)
+            ->where('users.data', fn ($users) => collect($users)->contains(fn ($user) => $user['id'] === $this->admin->public_id)
                 && ! collect($users)->contains(fn ($user) => $user['id'] === (string) $this->admin->id)));
 
     Permission::factory()->fromRegistry('roles.view')->create();
@@ -86,7 +86,7 @@ test('management payloads expose public ids instead of database ids', function (
     $this->actingAs($this->manager)
         ->get(route('user-management.roles.index'))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('roles', fn ($roles) => collect($roles)->contains(fn ($role) => $role['id'] === $this->adminRole->public_id)
+            ->where('roles.data', fn ($roles) => collect($roles)->contains(fn ($role) => $role['id'] === $this->adminRole->public_id)
                 && ! collect($roles)->contains(fn ($role) => $role['id'] === (string) $this->adminRole->id)));
 });
 
@@ -111,7 +111,7 @@ test('other users cannot edit the admin even with direct or inherited permission
     expect($this->admin->fresh()->only(['first_name', 'email', 'password']))
         ->toBe($this->admin->only(['first_name', 'email', 'password']));
     $this->get(route('user-management.users.index'))->assertInertia(fn (Assert $page) => $page
-        ->where('users', fn ($users) => collect($users)->firstWhere('id', $this->admin->public_id)['can_edit'] === false));
+        ->where('users.data', fn ($users) => collect($users)->firstWhere('id', $this->admin->public_id)['can_edit'] === false));
 })->with([true, false]);
 
 test('ordinary users can still be created updated and deleted with inherited permissions', function () {

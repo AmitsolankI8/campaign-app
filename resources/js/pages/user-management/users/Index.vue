@@ -8,10 +8,18 @@ import {
     edit,
     index,
 } from '@/actions/App/Http/Controllers/UserManagement/UserController';
+import DataTable from '@/components/data-table/DataTable.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useDateTimeFormat } from '@/composables/useDateTimeFormat';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { usePermissions } from '@/composables/usePermissions';
+import type { DataTableColumn, DataTableData } from '@/types/data-table';
 
 type UserRow = {
     id: string;
@@ -24,7 +32,8 @@ type UserRow = {
 };
 
 const props = defineProps<{
-    users: UserRow[];
+    users: DataTableData<UserRow>;
+    roleOptions: { name: string; display_name: string }[];
 }>();
 
 defineOptions({
@@ -39,7 +48,6 @@ defineOptions({
 });
 
 const { hasPermissions } = usePermissions();
-const { formatDate, formatTime } = useDateTimeFormat();
 const page = usePage();
 
 const canEditUser = (user: UserRow): boolean =>
@@ -48,9 +56,9 @@ const canEditUser = (user: UserRow): boolean =>
 
 const showActions = computed(
     () =>
-        props.users.some(canEditUser) ||
+        props.users.data.some(canEditUser) ||
         (hasPermissions(['users.delete']) &&
-            props.users.some((user) => user.can_delete)),
+            props.users.data.some((user) => user.can_delete)),
 );
 
 const deleteUser = (user: UserRow) => {
@@ -64,6 +72,20 @@ const deleteUser = (user: UserRow) => {
 
     router.delete(destroy.url(user.id), { preserveScroll: true });
 };
+const columns = computed<DataTableColumn<UserRow>[]>(() => [
+    { key: 'full_name', label: 'Name', cellClass: 'font-medium' },
+    { key: 'email', label: 'Email', cellClass: 'text-muted-foreground' },
+    { key: 'roles', label: 'Roles' },
+    {
+        key: 'created_at',
+        label: 'Created At',
+        format: 'datetime',
+        cellClass: 'text-muted-foreground',
+    },
+    ...(showActions.value
+        ? [{ key: 'actions', label: 'Actions', headerClass: 'w-40 text-right' }]
+        : []),
+]);
 </script>
 
 <template>
@@ -85,95 +107,76 @@ const deleteUser = (user: UserRow) => {
             </Button>
         </div>
 
-        <div class="overflow-hidden rounded-xl border">
-            <table class="w-full text-sm">
-                <thead class="bg-muted/50 text-left">
-                    <tr>
-                        <th class="px-4 py-3 font-medium">Name</th>
-                        <th class="px-4 py-3 font-medium">Email</th>
-                        <th class="px-4 py-3 font-medium">Roles</th>
-                        <th class="px-4 py-3 font-medium">Created At</th>
-                        <th
-                            v-if="showActions"
-                            class="w-40 px-4 py-3 text-right font-medium"
+        <DataTable
+            :data="users"
+            :columns="columns"
+            prop-name="users"
+            caption="Users"
+            empty-message="No users found."
+        >
+            <template #extra-filters="{ filters, loading }">
+                <Select
+                    :model-value="String(filters.role ?? '__all')"
+                    :disabled="loading"
+                    @update:model-value="
+                        filters.role =
+                            $event === '__all' ? null : String($event)
+                    "
+                >
+                    <SelectTrigger class="w-48" aria-label="Filter by role">
+                        <SelectValue placeholder="All roles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="__all">All roles</SelectItem>
+                        <SelectItem
+                            v-for="role in roleOptions"
+                            :key="role.name"
+                            :value="role.name"
                         >
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-if="users.length === 0">
-                        <td
-                            :colspan="showActions ? 5 : 4"
-                            class="px-4 py-8 text-center text-muted-foreground"
+                            {{ role.display_name }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            </template>
+            <template #cell-roles="{ row: user }">
+                <div class="flex flex-wrap gap-2">
+                    <Badge
+                        v-for="role in user.roles"
+                        :key="role"
+                        variant="secondary"
+                        >{{ role }}</Badge
+                    >
+                    <span
+                        v-if="!user.roles.length"
+                        class="text-muted-foreground"
+                        >No roles</span
+                    >
+                </div>
+            </template>
+            <template #cell-actions="{ row: user }">
+                <div class="flex justify-end gap-2">
+                    <Button
+                        v-if="canEditUser(user)"
+                        size="sm"
+                        variant="outline"
+                        as-child
+                    >
+                        <Link :href="edit.url(user.id)"
+                            ><Pencil class="size-4" />Edit</Link
                         >
-                            No users found.
-                        </td>
-                    </tr>
-                    <tr v-for="user in users" :key="user.id" class="border-t">
-                        <td class="px-4 py-3 font-medium">
-                            {{ user.full_name }}
-                        </td>
-                        <td class="px-4 py-3 text-muted-foreground">
-                            {{ user.email }}
-                        </td>
-                        <td class="px-4 py-3">
-                            <div class="flex flex-wrap gap-2">
-                                <Badge
-                                    v-for="role in user.roles"
-                                    :key="role"
-                                    variant="secondary"
-                                >
-                                    {{ role }}
-                                </Badge>
-                                <span
-                                    v-if="user.roles.length === 0"
-                                    class="text-muted-foreground"
-                                >
-                                    No roles
-                                </span>
-                            </div>
-                        </td>
-                        <td class="px-4 py-3 text-muted-foreground">
-                            <div v-if="user.created_at" class="space-y-0.5">
-                                <div>{{ formatDate(user.created_at) }}</div>
-                                <div class="text-xs">
-                                    {{ formatTime(user.created_at) }}
-                                </div>
-                            </div>
-                            <span v-else>—</span>
-                        </td>
-                        <td v-if="showActions" class="px-4 py-3">
-                            <div class="flex justify-end gap-2">
-                                <Button
-                                    v-if="canEditUser(user)"
-                                    size="sm"
-                                    variant="outline"
-                                    as-child
-                                >
-                                    <Link :href="edit.url(user.id)">
-                                        <Pencil class="size-4" />
-                                        Edit
-                                    </Link>
-                                </Button>
-                                <Button
-                                    v-if="
-                                        hasPermissions(['users.delete']) &&
-                                        user.can_delete
-                                    "
-                                    size="sm"
-                                    variant="destructive"
-                                    type="button"
-                                    @click="deleteUser(user)"
-                                >
-                                    <Trash2 class="size-4" />
-                                    Delete
-                                </Button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                    </Button>
+                    <Button
+                        v-if="
+                            hasPermissions(['users.delete']) && user.can_delete
+                        "
+                        size="sm"
+                        variant="destructive"
+                        type="button"
+                        @click="deleteUser(user)"
+                        ><Trash2 class="size-4" />Delete</Button
+                    >
+                </div>
+            </template>
+        </DataTable>
     </div>
 </template>

@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from '@lucide/vue';
+import { computed } from 'vue';
 import {
     create,
     destroy,
     edit,
     index,
 } from '@/actions/App/Http/Controllers/UserManagement/RoleController';
+import DataTable from '@/components/data-table/DataTable.vue';
 import { Button } from '@/components/ui/button';
-import { useDateTimeFormat } from '@/composables/useDateTimeFormat';
 import { usePermissions } from '@/composables/usePermissions';
+import type { DataTableColumn, DataTableData } from '@/types/data-table';
 
 type RoleRow = {
     id: string;
@@ -20,8 +22,8 @@ type RoleRow = {
     created_at: string | null;
 };
 
-defineProps<{
-    roles: RoleRow[];
+const props = defineProps<{
+    roles: DataTableData<RoleRow>;
 }>();
 
 defineOptions({
@@ -36,10 +38,19 @@ defineOptions({
 });
 
 const { hasPermissions } = usePermissions();
-const { formatDate, formatTime } = useDateTimeFormat();
+
+const canEditRole = (role: RoleRow): boolean =>
+    role.name !== 'admin' && hasPermissions(['roles.edit']);
+const canDeleteRole = (role: RoleRow): boolean =>
+    role.name !== 'admin' &&
+    role.users_count === 0 &&
+    hasPermissions(['roles.delete']);
+const showActions = computed(() =>
+    props.roles.data.some((role) => canEditRole(role) || canDeleteRole(role)),
+);
 
 const deleteRole = (role: RoleRow) => {
-    if (role.name === 'admin' || !hasPermissions(['roles.delete'])) {
+    if (!canDeleteRole(role)) {
         return;
     }
 
@@ -49,6 +60,24 @@ const deleteRole = (role: RoleRow) => {
 
     router.delete(destroy.url(role.id), { preserveScroll: true });
 };
+const columns = computed<DataTableColumn<RoleRow>[]>(() => [
+    { key: 'display_name', label: 'Role' },
+    {
+        key: 'short_note',
+        label: 'Short note',
+        cellClass: 'text-muted-foreground',
+    },
+    { key: 'users_count', label: 'Users', cellClass: 'text-muted-foreground' },
+    {
+        key: 'created_at',
+        label: 'Created At',
+        format: 'datetime',
+        cellClass: 'text-muted-foreground',
+    },
+    ...(showActions.value
+        ? [{ key: 'actions', label: 'Actions', headerClass: 'w-40 text-right' }]
+        : []),
+]);
 </script>
 
 <template>
@@ -70,97 +99,39 @@ const deleteRole = (role: RoleRow) => {
             </Button>
         </div>
 
-        <div class="overflow-hidden rounded-xl border">
-            <table class="w-full text-sm">
-                <thead class="bg-muted/50 text-left">
-                    <tr>
-                        <th class="px-4 py-3 font-medium">Role</th>
-                        <th class="px-4 py-3 font-medium">Short note</th>
-                        <th class="px-4 py-3 font-medium">Users</th>
-                        <th class="px-4 py-3 font-medium">Created At</th>
-                        <th
-                            v-if="
-                                hasPermissions(['roles.edit', 'roles.delete'])
-                            "
-                            class="w-40 px-4 py-3 text-right font-medium"
+        <DataTable
+            :data="roles"
+            :columns="columns"
+            prop-name="roles"
+            caption="Roles"
+            empty-message="No roles found."
+        >
+            <template #cell-display_name="{ row: role }">
+                <div class="font-medium">{{ role.display_name }}</div>
+                <div class="text-xs text-muted-foreground">{{ role.name }}</div>
+            </template>
+            <template #cell-actions="{ row: role }">
+                <div class="flex justify-end gap-2">
+                    <Button
+                        v-if="canEditRole(role)"
+                        size="sm"
+                        variant="outline"
+                        as-child
+                    >
+                        <Link :href="edit.url(role.id)"
+                            ><Pencil class="size-4" />Edit</Link
                         >
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-if="roles.length === 0">
-                        <td
-                            :colspan="
-                                hasPermissions(['roles.edit', 'roles.delete'])
-                                    ? 5
-                                    : 4
-                            "
-                            class="px-4 py-8 text-center text-muted-foreground"
-                        >
-                            No roles found.
-                        </td>
-                    </tr>
-                    <tr v-for="role in roles" :key="role.id" class="border-t">
-                        <td class="px-4 py-3">
-                            <div class="font-medium">
-                                {{ role.display_name }}
-                            </div>
-                            <div class="text-xs text-muted-foreground">
-                                {{ role.name }}
-                            </div>
-                        </td>
-                        <td class="px-4 py-3 text-muted-foreground">
-                            {{ role.short_note ?? '—' }}
-                        </td>
-                        <td class="px-4 py-3 text-muted-foreground">
-                            {{ role.users_count }}
-                        </td>
-                        <td class="px-4 py-3 text-muted-foreground">
-                            <div v-if="role.created_at" class="space-y-0.5">
-                                <div>{{ formatDate(role.created_at) }}</div>
-                                <div class="text-xs">
-                                    {{ formatTime(role.created_at) }}
-                                </div>
-                            </div>
-                            <span v-else>—</span>
-                        </td>
-                        <td
-                            v-if="
-                                hasPermissions(['roles.edit', 'roles.delete'])
-                            "
-                            class="px-4 py-3"
-                        >
-                            <div
-                                v-if="role.name !== 'admin'"
-                                class="flex justify-end gap-2"
-                            >
-                                <Button
-                                    v-if="hasPermissions(['roles.edit'])"
-                                    size="sm"
-                                    variant="outline"
-                                    as-child
-                                >
-                                    <Link :href="edit.url(role.id)">
-                                        <Pencil class="size-4" />
-                                        Edit
-                                    </Link>
-                                </Button>
-                                <Button
-                                    v-if="hasPermissions(['roles.delete'])"
-                                    size="sm"
-                                    variant="destructive"
-                                    type="button"
-                                    @click="deleteRole(role)"
-                                >
-                                    <Trash2 class="size-4" />
-                                    Delete
-                                </Button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                    </Button>
+                    <Button
+                        v-if="canDeleteRole(role)"
+                        size="sm"
+                        variant="destructive"
+                        type="button"
+                        @click="deleteRole(role)"
+                        ><Trash2 class="size-4" />Delete</Button
+                    >
+                </div>
+            </template>
+        </DataTable>
     </div>
 </template>

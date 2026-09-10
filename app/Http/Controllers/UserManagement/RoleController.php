@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\UserManagement;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UserManagement\IndexRoleRequest;
 use App\Http\Requests\UserManagement\StoreRoleRequest;
 use App\Http\Requests\UserManagement\UpdateRoleRequest;
 use App\Http\Resources\UserManagement\ManagedRoleResource;
 use App\Http\Resources\UserManagement\RoleRowResource;
 use App\Models\Role;
+use App\Support\DataTable;
 use App\Support\PermissionRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -16,17 +18,18 @@ use Inertia\Response;
 
 class RoleController extends Controller
 {
-    public function index(): Response
+    public function index(IndexRoleRequest $request): Response
     {
         Gate::authorize('roles.view');
 
         return Inertia::render('user-management/roles/Index', [
-            'roles' => Role::query()
-                ->withCount('users')
-                ->orderBy('display_name')
-                ->get(['id', 'public_id', 'name', 'display_name', 'short_note', 'created_at'])
-                ->toResourceCollection(RoleRowResource::class)
-                ->resolve(),
+            'roles' => fn () => DataTable::make(
+                Role::query()
+                    ->select(['id', 'public_id', 'name', 'display_name', 'short_note', 'created_at'])
+                    ->withCount('users'),
+                $request,
+                RoleRowResource::class,
+            ),
         ]);
     }
 
