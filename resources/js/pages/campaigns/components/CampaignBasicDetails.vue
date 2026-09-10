@@ -10,15 +10,9 @@ import {
 import { useDateTimeFormat } from '@/composables/useDateTimeFormat';
 import type { Campaign } from '../types';
 
-withDefaults(
-    defineProps<{
-        campaign: Campaign;
-        typeFlowLabel?: string;
-    }>(),
-    {
-        typeFlowLabel: 'Pending',
-    },
-);
+defineProps<{
+    campaign: Campaign;
+}>();
 
 const { formatDateTime } = useDateTimeFormat();
 </script>
@@ -38,33 +32,33 @@ const { formatDateTime } = useDateTimeFormat();
                 </Badge>
             </div>
         </CardHeader>
-        <CardContent
-            class="grid gap-2 px-4 text-xs sm:grid-cols-2 lg:grid-cols-4"
-        >
-            <div class="rounded-md border p-3">
-                <div class="text-muted-foreground">Campaign ID</div>
-                <div class="mt-0.5 text-sm font-medium break-all">
-                    {{ campaign.id }}
+        <CardContent class="px-4">
+            <dl
+                class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-4"
+            >
+                <div class="min-w-0">
+                    <dt class="text-xs text-muted-foreground">Campaign ID</dt>
+                    <dd class="truncate font-medium" :title="campaign.id">
+                        {{ campaign.id }}
+                    </dd>
                 </div>
-            </div>
-            <div class="rounded-md border p-3">
-                <div class="text-muted-foreground">Type flow</div>
-                <div class="mt-0.5 text-sm font-medium">
-                    {{ typeFlowLabel }}
+                <div>
+                    <dt class="text-xs text-muted-foreground">Campaign type</dt>
+                    <dd class="font-medium">{{ campaign.type.label }}</dd>
                 </div>
-            </div>
-            <div class="rounded-md border p-3">
-                <div class="text-muted-foreground">Created</div>
-                <div class="mt-0.5 text-sm font-medium">
-                    {{ formatDateTime(campaign.created_at) || '-' }}
+                <div>
+                    <dt class="text-xs text-muted-foreground">Created</dt>
+                    <dd class="font-medium">
+                        {{ formatDateTime(campaign.created_at) || '-' }}
+                    </dd>
                 </div>
-            </div>
-            <div class="rounded-md border p-3">
-                <div class="text-muted-foreground">Updated</div>
-                <div class="mt-0.5 text-sm font-medium">
-                    {{ formatDateTime(campaign.updated_at) || '-' }}
+                <div>
+                    <dt class="text-xs text-muted-foreground">Updated</dt>
+                    <dd class="font-medium">
+                        {{ formatDateTime(campaign.updated_at) || '-' }}
+                    </dd>
                 </div>
-            </div>
+            </dl>
         </CardContent>
     </Card>
 </template>

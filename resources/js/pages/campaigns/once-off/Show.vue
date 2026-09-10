@@ -80,10 +80,7 @@ const tabs = [
             </div>
         </div>
 
-        <CampaignBasicDetails
-            :campaign="campaign"
-            :type-flow-label="campaign.type.label"
-        />
+        <CampaignBasicDetails :campaign="campaign" />
 
         <section class="space-y-4" aria-label="Campaign sections">
             <nav class="flex flex-wrap gap-2" aria-label="Campaign tabs">

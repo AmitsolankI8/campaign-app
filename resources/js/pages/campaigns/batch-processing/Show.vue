@@ -59,7 +59,7 @@ const { hasPermissions } = usePermissions();
             </div>
         </div>
 
-        <CampaignBasicDetails :campaign="campaign" type-flow-label="Pending" />
+        <CampaignBasicDetails :campaign="campaign" />
 
         <Card>
             <CardHeader>
