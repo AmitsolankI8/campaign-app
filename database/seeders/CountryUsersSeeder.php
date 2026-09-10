@@ -16,11 +16,9 @@ class CountryUsersSeeder extends Seeder
      * @var array<string, array{timezone: string, language: string, number: string, date: string, time: string}>
      */
     private const COUNTRY_PREFERENCES = [
-        'united-states' => ['timezone' => 'eastern-time', 'language' => 'english-us', 'number' => 'us-number', 'date' => 'us-date', 'time' => 'twelve-hour-time'],
-        'india' => ['timezone' => 'india-standard-time', 'language' => 'english-india', 'number' => 'indian-number', 'date' => 'day-first-date', 'time' => 'twelve-hour-time'],
-        'canada' => ['timezone' => 'eastern-time', 'language' => 'english', 'number' => 'us-number', 'date' => 'iso-date', 'time' => 'twelve-hour-time'],
-        'united-kingdom' => ['timezone' => 'greenwich-mean-time', 'language' => 'english', 'number' => 'us-number', 'date' => 'day-first-date', 'time' => 'twenty-four-hour-time'],
-        'australia' => ['timezone' => 'utc', 'language' => 'english', 'number' => 'us-number', 'date' => 'day-first-date', 'time' => 'twenty-four-hour-time'],
+        'india' => ['timezone' => 'india-standard-time', 'language' => 'english', 'number' => 'indian-number', 'date' => 'day-first-date', 'time' => 'twelve-hour-time'],
+        'united-states' => ['timezone' => 'eastern-time', 'language' => 'english', 'number' => 'us-number', 'date' => 'us-date', 'time' => 'twelve-hour-time'],
+        'australia' => ['timezone' => 'australian-eastern-standard-time', 'language' => 'english', 'number' => 'australian-number', 'date' => 'australian-date', 'time' => 'twenty-four-hour-time'],
     ];
 
     public function run(): void

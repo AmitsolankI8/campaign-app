@@ -49,13 +49,15 @@ class UserPreferenceFactory extends Factory
         } catch (Throwable) {
         }
 
+        $defaults = PreferenceRegistry::defaults();
+
         return [
-            'country_preference_id' => (int) PreferenceCountry::query()->where('name', 'india')->value('id'),
-            'timezone_preference_id' => (int) PreferenceTimezone::query()->where('name', 'india-standard-time')->value('id'),
-            'language_preference_id' => (int) PreferenceLanguage::query()->where('name', 'english-india')->value('id'),
-            'number_format_preference_id' => $this->formatId(PreferenceFormat::TYPE_NUMBER, 'indian-number'),
-            'date_format_preference_id' => $this->formatId(PreferenceFormat::TYPE_DATE, 'day-first-date'),
-            'time_format_preference_id' => $this->formatId(PreferenceFormat::TYPE_TIME, 'twelve-hour-time'),
+            'country_preference_id' => (int) PreferenceCountry::query()->where('name', $defaults['country'])->value('id'),
+            'timezone_preference_id' => (int) PreferenceTimezone::query()->where('name', $defaults['timezone'])->value('id'),
+            'language_preference_id' => (int) PreferenceLanguage::query()->where('name', $defaults['language'])->value('id'),
+            'number_format_preference_id' => $this->formatId(PreferenceFormat::TYPE_NUMBER, $defaults['number']),
+            'date_format_preference_id' => $this->formatId(PreferenceFormat::TYPE_DATE, $defaults['date']),
+            'time_format_preference_id' => $this->formatId(PreferenceFormat::TYPE_TIME, $defaults['time']),
         ];
     }
 

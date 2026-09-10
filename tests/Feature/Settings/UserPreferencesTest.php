@@ -8,7 +8,9 @@ use App\Models\PreferenceTimezone;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserPreference;
+use App\Support\PreferenceRegistry;
 use App\Support\UserPreferences;
+use Database\Seeders\PreferenceSeeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -31,6 +33,27 @@ function alternatePreferencePayload(): array
         'time_format_preference_id' => (int) PreferenceFormat::query()->type(PreferenceFormat::TYPE_TIME)->where('name', 'twenty-four-hour-time')->value('id'),
     ];
 }
+
+test('preference seeder stores the registered preference catalog', function () {
+    $this->seed(PreferenceSeeder::class);
+
+    $registeredFormats = collect(PreferenceRegistry::formats())
+        ->map(fn (array $format) => "{$format['type']}:{$format['name']}")
+        ->all();
+    $storedFormats = PreferenceFormat::query()
+        ->get()
+        ->map(fn (PreferenceFormat $format) => "{$format->type}:{$format->name}")
+        ->all();
+
+    expect(PreferenceCountry::query()->pluck('name')->all())
+        ->toEqualCanonicalizing(collect(PreferenceRegistry::countries())->pluck('name')->all())
+        ->and(PreferenceTimezone::query()->pluck('name')->all())
+        ->toEqualCanonicalizing(collect(PreferenceRegistry::timezones())->pluck('name')->all())
+        ->and(PreferenceLanguage::query()->pluck('name')->all())
+        ->toEqualCanonicalizing(collect(PreferenceRegistry::languages())->pluck('name')->all())
+        ->and($storedFormats)
+        ->toEqualCanonicalizing($registeredFormats);
+});
 
 test('user factory creates default preferences automatically', function () {
     $user = User::factory()->create();

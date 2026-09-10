@@ -5,6 +5,7 @@ use App\Models\PreferenceCountry;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\PermissionRegistry;
+use App\Support\PreferenceRegistry;
 use Database\Seeders\CountryUsersSeeder;
 use Database\Seeders\PreferenceSeeder;
 use Database\Seeders\UserManagementSeeder;
@@ -135,6 +136,9 @@ test('country users seeder creates role users with country preferences', functio
     $this->seed(CountryUsersSeeder::class);
 
     $countries = PreferenceCountry::query()->pluck('display_name', 'name');
+    $registeredCountryNames = collect(PreferenceRegistry::countries())->pluck('name');
+
+    expect($countries->keys()->all())->toEqualCanonicalizing($registeredCountryNames->all());
 
     foreach ($countries as $countryName => $displayName) {
         $user = User::where('email', "{$countryName}-user@example.com")->firstOrFail();
@@ -145,7 +149,7 @@ test('country users seeder creates role users with country preferences', functio
             ->and($user->preferences->country->name)->toBe($countryName);
     }
 
-    expect(User::where('email', 'like', '%-user@example.com')->count())->toBe($countries->count());
+    expect(User::where('email', 'like', '%-user@example.com')->count())->toBe($registeredCountryNames->count());
 });
 
 test('role and permission factories create complete distinct records', function (string $model) {

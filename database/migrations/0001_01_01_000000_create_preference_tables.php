@@ -45,7 +45,6 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['type', 'name']);
-            $table->unique(['type', 'format']);
         });
     }
 
