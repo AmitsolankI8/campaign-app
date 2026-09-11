@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     CalendarClock,
     ClipboardList,
@@ -7,8 +7,9 @@ import {
     Upload,
     Users,
 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { edit, index } from '@/actions/App/Http/Controllers/CampaignController';
+import { show } from '@/actions/App/Http/Controllers/OnceOffCampaignController';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -18,11 +19,23 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { usePermissions } from '@/composables/usePermissions';
+import type { DataTableData } from '@/types/data-table';
 import CampaignBasicDetails from '../components/CampaignBasicDetails.vue';
-import type { Campaign } from '../types';
+import type {
+    Campaign,
+    ContactImportStatus,
+    OnceOffCampaignContact,
+    OnceOffCampaignContactImport,
+} from '../types';
+import Contacts from './Contacts.vue';
+import UploadContacts from './UploadContacts.vue';
 
-defineProps<{
+const props = defineProps<{
     campaign: Campaign;
+    contacts: DataTableData<OnceOffCampaignContact>;
+    contactImports: DataTableData<OnceOffCampaignContactImport> | null;
+    contactSummary: { total: number; pending_imports: number };
+    importStatuses: ContactImportStatus[];
 }>();
 
 defineOptions({
@@ -41,14 +54,39 @@ defineOptions({
 });
 
 const { hasPermissions } = usePermissions();
-const selectedTab = ref('summary');
+const page = usePage();
+const selectedTab = computed(() => {
+    const tab = new URLSearchParams(page.url.split('?')[1] ?? '').get('tab');
 
-const tabs = [
-    { id: 'summary', label: 'Summary', icon: ClipboardList },
-    { id: 'contacts', label: 'Contacts', icon: Users },
-    { id: 'upload_contacts', label: 'Upload Contacts', icon: Upload },
-    { id: 'schedule', label: 'Schedule', icon: CalendarClock },
-];
+    return tabs.value.some((item) => item.id === tab) ? tab : 'summary';
+});
+
+const tabs = computed(() =>
+    [
+        { id: 'summary', label: 'Summary', icon: ClipboardList },
+        { id: 'contacts', label: 'Contacts', icon: Users },
+        { id: 'upload_contacts', label: 'Upload Contacts', icon: Upload },
+        { id: 'schedule', label: 'Schedule', icon: CalendarClock },
+    ].filter(
+        (tab) =>
+            tab.id !== 'upload_contacts' || hasPermissions(['campaigns.edit']),
+    ),
+);
+
+function selectTab(tab: string) {
+    if (
+        !hasPermissions(['campaigns.view']) ||
+        !tabs.value.some((item) => item.id === tab)
+    ) {
+        return;
+    }
+
+    router.get(
+        show.url(props.campaign.id, { query: { tab } }),
+        {},
+        { preserveState: true, preserveScroll: true },
+    );
+}
 </script>
 
 <template>
@@ -90,7 +128,7 @@ const tabs = [
                     type="button"
                     :variant="selectedTab === tab.id ? 'default' : 'outline'"
                     :aria-pressed="selectedTab === tab.id"
-                    @click="selectedTab = tab.id"
+                    @click="selectTab(tab.id)"
                 >
                     <component :is="tab.icon" class="size-4" />
                     {{ tab.label }}
@@ -109,11 +147,17 @@ const tabs = [
                         <div class="text-sm text-muted-foreground">
                             Contacts
                         </div>
-                        <div class="mt-2 text-2xl font-semibold">0</div>
+                        <div class="mt-2 text-2xl font-semibold">
+                            {{ contactSummary.total }}
+                        </div>
                     </div>
                     <div class="rounded-lg border p-4">
-                        <div class="text-sm text-muted-foreground">Upload</div>
-                        <div class="mt-2 text-2xl font-semibold">Pending</div>
+                        <div class="text-sm text-muted-foreground">
+                            Pending imports
+                        </div>
+                        <div class="mt-2 text-2xl font-semibold">
+                            {{ contactSummary.pending_imports }}
+                        </div>
                     </div>
                     <div class="rounded-lg border p-4">
                         <div class="text-sm text-muted-foreground">
@@ -124,45 +168,21 @@ const tabs = [
                 </CardContent>
             </Card>
 
-            <Card v-else-if="selectedTab === 'contacts'">
-                <CardHeader>
-                    <CardTitle>Contacts</CardTitle>
-                    <CardDescription>No contacts added yet.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div
-                        class="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground"
-                    >
-                        Contact records will appear here.
-                    </div>
-                </CardContent>
-            </Card>
+            <Contacts
+                v-else-if="selectedTab === 'contacts'"
+                :contacts="contacts"
+            />
 
-            <Card v-else-if="selectedTab === 'upload_contacts'">
-                <CardHeader>
-                    <CardTitle>Upload Contacts</CardTitle>
-                    <CardDescription>
-                        Contact upload is pending.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div
-                        class="grid min-h-48 place-items-center rounded-lg border border-dashed bg-muted/20 p-8 text-center"
-                    >
-                        <div>
-                            <Upload
-                                class="mx-auto size-8 text-muted-foreground"
-                            />
-                            <div class="mt-3 text-sm font-medium">
-                                Upload area
-                            </div>
-                            <div class="mt-1 text-sm text-muted-foreground">
-                                No file selected
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+            <UploadContacts
+                v-else-if="
+                    selectedTab === 'upload_contacts' &&
+                    contactImports &&
+                    hasPermissions(['campaigns.edit'])
+                "
+                :campaign="campaign"
+                :contact-imports="contactImports"
+                :import-statuses="importStatuses"
+            />
 
             <Card v-else>
                 <CardHeader>

@@ -54,3 +54,32 @@ export type Campaign = {
 };
 
 export type CampaignRow = Omit<Campaign, 'updated_at'>;
+
+export const CONTACT_IMPORT_STATUS_KEY = {
+    pending: 'pending',
+    synced: 'synced',
+} as const;
+
+export type ContactImportStatus = {
+    value: number;
+    key: (typeof CONTACT_IMPORT_STATUS_KEY)[keyof typeof CONTACT_IMPORT_STATUS_KEY];
+    label: string;
+};
+
+export type OnceOffCampaignContact = {
+    id: string;
+    first_name: string;
+    last_name: string | null;
+    number: string;
+    email: string | null;
+    created_at: string | null;
+};
+
+export type OnceOffCampaignContactImport = {
+    id: string;
+    file_name: string;
+    contact_count: number;
+    status: ContactImportStatus;
+    created_at: string | null;
+    synced_at: string | null;
+};

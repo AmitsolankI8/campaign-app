@@ -8,6 +8,7 @@ use App\Models\Concerns\HasPublicId;
 use Database\Factories\CampaignFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -48,4 +49,16 @@ class Campaign extends Model
         'campaign_type' => CampaignType::class,
         'status' => CampaignStatus::class,
     ];
+
+    /** @return HasMany<OnceOffCampaignContact, $this> */
+    public function onceOffContacts(): HasMany
+    {
+        return $this->hasMany(OnceOffCampaignContact::class);
+    }
+
+    /** @return HasMany<OnceOffCampaignContactImport, $this> */
+    public function contactImports(): HasMany
+    {
+        return $this->hasMany(OnceOffCampaignContactImport::class);
+    }
 }
