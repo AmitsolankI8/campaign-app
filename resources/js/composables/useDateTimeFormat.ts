@@ -92,6 +92,9 @@ export function useDateTimeFormat() {
     const formatDateTime = (value: DateTimeValue): string | null =>
         formatUtc(value, dateTimeFormat.value);
 
+    const formatDateTimeInput = (value: DateTimeValue): string | null =>
+        formatUtc(value, 'YYYY-MM-DDTHH:mm:ss');
+
     const toUtcIso = (
         localValue: string | null | undefined,
         format = dateTimeFormat.value,
@@ -118,6 +121,7 @@ export function useDateTimeFormat() {
         formatDate,
         formatTime,
         formatDateTime,
+        formatDateTimeInput,
         toUtcIso,
     };
 }

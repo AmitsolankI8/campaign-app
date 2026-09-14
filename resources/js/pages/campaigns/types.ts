@@ -49,11 +49,12 @@ export type Campaign = {
     type: CampaignTypePayload;
     status: CampaignStatusPayload;
     show_url: string;
+    scheduled_at: string | null;
     created_at: string | null;
     updated_at: string | null;
 };
 
-export type CampaignRow = Omit<Campaign, 'updated_at'>;
+export type CampaignRow = Omit<Campaign, 'updated_at' | 'scheduled_at'>;
 
 export const CONTACT_IMPORT_STATUS_KEY = {
     pending: 'pending',
@@ -143,4 +144,16 @@ export type ContactSyncPlan = {
     skip: number;
     remove: number;
     fingerprint: string;
+};
+
+export type OnceOffCampaignSchedule = {
+    id: string;
+    attempt_count: number;
+    scheduled_at: string;
+    channel: string;
+};
+
+export type CampaignScheduleChannel = {
+    value: string;
+    label: string;
 };

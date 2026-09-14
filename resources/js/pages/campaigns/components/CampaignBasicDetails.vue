@@ -8,6 +8,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { useDateTimeFormat } from '@/composables/useDateTimeFormat';
+import { CAMPAIGN_TYPE_KEY } from '../types';
 import type { Campaign } from '../types';
 
 defineProps<{
@@ -55,6 +56,12 @@ const { formatDateTime } = useDateTimeFormat();
                 <div>
                     <dt class="text-xs text-muted-foreground">Campaign type</dt>
                     <dd class="font-medium">{{ campaign.type.label }}</dd>
+                </div>
+                <div v-if="campaign.type.key === CAMPAIGN_TYPE_KEY.onceOff">
+                    <dt class="text-xs text-muted-foreground">Scheduled At</dt>
+                    <dd class="font-medium">
+                        {{ formatDateTime(campaign.scheduled_at) || '--' }}
+                    </dd>
                 </div>
                 <div>
                     <dt class="text-xs text-muted-foreground">Created</dt>

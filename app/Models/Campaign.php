@@ -9,6 +9,7 @@ use Database\Factories\CampaignFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -20,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property CampaignStatus $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read OnceOffCampaignSchedule|null $firstOnceOffSchedule
  */
 class Campaign extends Model
 {
@@ -60,5 +62,19 @@ class Campaign extends Model
     public function contactImports(): HasMany
     {
         return $this->hasMany(OnceOffCampaignContactImport::class);
+    }
+
+    /** @return HasOne<OnceOffCampaignSchedule, $this> */
+    public function firstOnceOffSchedule(): HasOne
+    {
+        return $this->hasOne(OnceOffCampaignSchedule::class)
+            ->select(['id', 'campaign_id', 'scheduled_at'])
+            ->where('attempt_count', 1);
+    }
+
+    /** @return HasMany<OnceOffCampaignSchedule, $this> */
+    public function onceOffSchedules(): HasMany
+    {
+        return $this->hasMany(OnceOffCampaignSchedule::class);
     }
 }

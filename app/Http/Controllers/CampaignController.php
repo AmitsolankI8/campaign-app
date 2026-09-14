@@ -63,7 +63,7 @@ class CampaignController extends Controller
         Gate::authorize('campaigns.edit');
 
         return Inertia::render('campaigns/Edit', [
-            'campaign' => $campaign->toResource(CampaignResource::class)->resolve(),
+            'campaign' => $campaign->loadMissing('firstOnceOffSchedule')->toResource(CampaignResource::class)->resolve(),
         ]);
     }
 

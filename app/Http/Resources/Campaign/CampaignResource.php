@@ -23,6 +23,7 @@ class CampaignResource extends JsonResource
             'status' => $this->status->toArray(),
             'short_note' => $this->short_note,
             'show_url' => route($this->campaign_type->showRouteName(), $this->resource),
+            'scheduled_at' => $this->whenLoaded('firstOnceOffSchedule', fn () => $this->firstOnceOffSchedule?->scheduled_at->toJSON(), null),
             'created_at' => $this->created_at?->toJSON(),
             'updated_at' => $this->updated_at?->toJSON(),
         ];

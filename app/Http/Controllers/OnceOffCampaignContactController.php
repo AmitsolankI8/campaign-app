@@ -26,7 +26,7 @@ class OnceOffCampaignContactController extends Controller
         abort_unless($campaign->campaign_type === CampaignType::OnceOff, 404);
 
         return Inertia::render('campaigns/once-off/Contacts', [
-            'campaign' => $campaign->toResource(CampaignResource::class)->resolve(),
+            'campaign' => $campaign->loadMissing('firstOnceOffSchedule')->toResource(CampaignResource::class)->resolve(),
             'contacts' => fn () => DataTable::make(
                 $campaign->onceOffContacts()->getQuery(),
                 IndexOnceOffCampaignContactRequest::forTable($request, 'contacts'),

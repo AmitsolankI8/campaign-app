@@ -22,6 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('once-off/contacts', [OnceOffCampaignContactController::class, 'index'])->name('once-off.contacts.index');
             Route::get('once-off/contact-imports', [OnceOffCampaignContactImportController::class, 'index'])->name('once-off.contact-imports.index');
             Route::get('once-off/schedule', [OnceOffCampaignScheduleController::class, 'show'])->name('once-off.schedule.show');
+            Route::put('once-off/schedule', [OnceOffCampaignScheduleController::class, 'update'])->name('once-off.schedule.update');
             Route::post('once-off/contacts', [OnceOffCampaignContactController::class, 'store'])->name('once-off.contacts.store');
             Route::post('once-off/contact-imports', [OnceOffCampaignContactImportController::class, 'store'])->name('once-off.contact-imports.store');
             Route::post('once-off/contact-imports/preview', [OnceOffCampaignContactImportController::class, 'preview'])->name('once-off.contact-imports.preview');

@@ -19,7 +19,7 @@ class OnceOffCampaignController extends Controller
         abort_unless($campaign->campaign_type === CampaignType::OnceOff, 404);
 
         return Inertia::render('campaigns/once-off/Show', [
-            'campaign' => $campaign->toResource(CampaignResource::class)->resolve(),
+            'campaign' => $campaign->loadMissing('firstOnceOffSchedule')->toResource(CampaignResource::class)->resolve(),
             'contactSummary' => fn () => [
                 'total' => $campaign->onceOffContacts()->count(),
                 'pending_imports' => $campaign->contactImports()->where('status', '!=', ContactImportStatus::Synced)->count(),

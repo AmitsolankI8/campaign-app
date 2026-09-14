@@ -40,7 +40,7 @@ class OnceOffCampaignContactImportController extends Controller
         $this->authorizeCampaign($campaign);
 
         return Inertia::render('campaigns/once-off/UploadContacts', [
-            'campaign' => $campaign->toResource(CampaignResource::class)->resolve(),
+            'campaign' => $campaign->loadMissing('firstOnceOffSchedule')->toResource(CampaignResource::class)->resolve(),
             'contactImports' => fn () => DataTable::make(
                 $campaign->contactImports()->select(['id', 'public_id', 'file_name', 'file_path', 'source', 'mode', 'uploaded_by', 'removed_count', 'contact_count', 'status', 'created_at', 'synced_at'])
                     ->with('uploader')->withCount(['uploadedRows', 'uploadedRows as processed_count' => fn ($query) => $query->whereNotIn('status', [ContactUploadRowStatus::Pending, ContactUploadRowStatus::Failed])])->getQuery(),
@@ -84,7 +84,7 @@ class OnceOffCampaignContactImportController extends Controller
         ]);
 
         return Inertia::render('campaigns/once-off/UploadShow', [
-            'campaign' => $campaign->toResource(CampaignResource::class)->resolve(),
+            'campaign' => $campaign->loadMissing('firstOnceOffSchedule')->toResource(CampaignResource::class)->resolve(),
             'upload' => $contactImport->toResource(OnceOffCampaignContactImportResource::class)->resolve($request),
             'rows' => fn () => DataTable::make(
                 $contactImport->uploadedRows()->with('contactImport')->select((new OnceOffCampaignContactUploadRow)->getTable().'.*')->selectSub(

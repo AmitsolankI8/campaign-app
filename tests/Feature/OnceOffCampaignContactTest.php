@@ -63,7 +63,7 @@ test('once-off tab routes load only their section data', function (string $route
     ['campaigns.once-off.show', 'Show', ['contactSummary'], ['contacts', 'contactImports', 'uploadModes']],
     ['campaigns.once-off.contacts.index', 'Contacts', ['contacts'], ['contactSummary', 'contactImports']],
     ['campaigns.once-off.contact-imports.index', 'UploadContacts', ['contactImports', 'importStatuses', 'uploadModes'], ['contacts', 'contactSummary']],
-    ['campaigns.once-off.schedule.show', 'Schedule', [], ['contacts', 'contactImports', 'contactSummary']],
+    ['campaigns.once-off.schedule.show', 'Schedule', ['schedules', 'channels'], ['contacts', 'contactImports', 'contactSummary']],
 ]);
 
 test('contact upload endpoints require both view and edit permissions', function (array $permissions) {
