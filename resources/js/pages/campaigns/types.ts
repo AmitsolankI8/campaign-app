@@ -58,6 +58,7 @@ export type CampaignRow = Omit<Campaign, 'updated_at'>;
 export const CONTACT_IMPORT_STATUS_KEY = {
     pending: 'pending',
     synced: 'synced',
+    partiallySynced: 'partially_synced',
 } as const;
 
 export type ContactImportStatus = {
@@ -82,4 +83,64 @@ export type OnceOffCampaignContactImport = {
     status: ContactImportStatus;
     created_at: string | null;
     synced_at: string | null;
+    source: ContactUploadSource;
+    mode: ContactUploadMode;
+    uploaded_by: string | null;
+    processed_count: number;
+    history_count: number;
+    removed_count: number;
+    download_url: string | null;
+};
+
+export const CONTACT_UPLOAD_MODE_KEY = {
+    append: 'append',
+    update: 'update',
+    replace: 'replace',
+} as const;
+export const CONTACT_UPLOAD_SOURCE_KEY = {
+    manual: 'manual',
+    file: 'file',
+} as const;
+export const CONTACT_UPLOAD_ROW_STATUS_KEY = {
+    pending: 'pending',
+    added: 'added',
+    updated: 'updated',
+    skipped: 'skipped',
+    failed: 'failed',
+} as const;
+type Option<K extends string> = { value: number; key: K; label: string };
+export type ContactUploadMode = Option<
+    (typeof CONTACT_UPLOAD_MODE_KEY)[keyof typeof CONTACT_UPLOAD_MODE_KEY]
+>;
+export type ContactUploadSource = Option<
+    (typeof CONTACT_UPLOAD_SOURCE_KEY)[keyof typeof CONTACT_UPLOAD_SOURCE_KEY]
+>;
+export type ContactUploadRowStatus = Option<
+    (typeof CONTACT_UPLOAD_ROW_STATUS_KEY)[keyof typeof CONTACT_UPLOAD_ROW_STATUS_KEY]
+>;
+export type ContactUploadRow = Omit<OnceOffCampaignContact, 'created_at'> & {
+    row_number: number;
+    status: ContactUploadRowStatus;
+    planned_action: 'add' | 'update' | 'skip' | null;
+    error: string | null;
+    before_values: Record<string, string | null> | null;
+    synced_at: string | null;
+};
+export type ContactFilePreview = {
+    headers: string[];
+    columns: string[];
+    rows: {
+        row_number: number;
+        values: string[];
+        errors: Record<string, string[]>;
+    }[];
+    errors: string[];
+    error_count: number;
+};
+export type ContactSyncPlan = {
+    add: number;
+    update: number;
+    skip: number;
+    remove: number;
+    fingerprint: string;
 };

@@ -5,6 +5,7 @@ use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\OnceOffCampaignContactController;
 use App\Http\Controllers\OnceOffCampaignContactImportController;
 use App\Http\Controllers\OnceOffCampaignController;
+use App\Http\Controllers\OnceOffCampaignScheduleController;
 use App\Http\Controllers\OngoingCampaignController;
 use App\Http\Controllers\UserManagement\RoleController;
 use App\Http\Controllers\UserManagement\UserController;
@@ -18,8 +19,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('campaigns.')
         ->group(function () {
             Route::get('once-off', [OnceOffCampaignController::class, 'show'])->name('once-off.show');
+            Route::get('once-off/contacts', [OnceOffCampaignContactController::class, 'index'])->name('once-off.contacts.index');
+            Route::get('once-off/contact-imports', [OnceOffCampaignContactImportController::class, 'index'])->name('once-off.contact-imports.index');
+            Route::get('once-off/schedule', [OnceOffCampaignScheduleController::class, 'show'])->name('once-off.schedule.show');
             Route::post('once-off/contacts', [OnceOffCampaignContactController::class, 'store'])->name('once-off.contacts.store');
             Route::post('once-off/contact-imports', [OnceOffCampaignContactImportController::class, 'store'])->name('once-off.contact-imports.store');
+            Route::post('once-off/contact-imports/preview', [OnceOffCampaignContactImportController::class, 'preview'])->name('once-off.contact-imports.preview');
+            Route::get('once-off/contact-imports/{contactImport}', [OnceOffCampaignContactImportController::class, 'show'])->scopeBindings()->name('once-off.contact-imports.show');
+            Route::get('once-off/contact-imports/{contactImport}/download', [OnceOffCampaignContactImportController::class, 'download'])->scopeBindings()->name('once-off.contact-imports.download');
             Route::post('once-off/contact-imports/{contactImport}/sync', [OnceOffCampaignContactImportController::class, 'sync'])
                 ->scopeBindings()
                 ->name('once-off.contact-imports.sync');

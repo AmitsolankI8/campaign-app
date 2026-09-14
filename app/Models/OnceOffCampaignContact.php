@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasPublicId;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -14,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property string $first_name
  * @property string|null $last_name
  * @property string $number
+ * @property string|null $normalized_number
  * @property string|null $email
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -21,10 +23,17 @@ use Illuminate\Support\Carbon;
  */
 class OnceOffCampaignContact extends Model
 {
-    use HasPublicId;
+    use HasPublicId, SoftDeletes;
 
     /** @var list<string> */
     protected $fillable = ['first_name', 'last_name', 'number', 'email'];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $contact): void {
+            $contact->normalized_number = preg_replace('/\D/', '', $contact->number);
+        });
+    }
 
     /** @var list<string> */
     protected $hidden = ['id', 'campaign_id'];

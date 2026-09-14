@@ -2,42 +2,39 @@
 
 namespace App\Enums;
 
-enum ContactImportStatus: int
+enum ContactUploadSource: int
 {
-    case Pending = 1;
-    case Synced = 2;
-    case PartiallySynced = 3;
+    case Manual = 1;
+    case File = 2;
 
-    public const DEFAULT = self::Pending->value;
+    public const DEFAULT = self::File->value;
 
     public function key(): string
     {
         return match ($this) {
-            self::Pending => 'pending',
-            self::Synced => 'synced',
-            self::PartiallySynced => 'partially_synced',
+            self::Manual => 'manual',
+            self::File => 'file',
         };
     }
 
     public function label(): string
     {
         return match ($this) {
-            self::Pending => __('Pending'),
-            self::Synced => __('Completed'),
-            self::PartiallySynced => __('Partially synced'),
+            self::Manual => __('Manual entry'),
+            self::File => __('File upload'),
         };
     }
 
     /** @return list<int> */
     public static function values(): array
     {
-        return array_map(fn (self $status): int => $status->value, self::cases());
+        return array_map(fn (self $item): int => $item->value, self::cases());
     }
 
     /** @return list<array{value: int, key: string, label: string}> */
     public static function options(): array
     {
-        return array_map(fn (self $status): array => $status->toArray(), self::cases());
+        return array_map(fn (self $item): array => $item->toArray(), self::cases());
     }
 
     /** @return array{value: int, key: string, label: string} */

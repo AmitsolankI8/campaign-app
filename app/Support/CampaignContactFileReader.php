@@ -16,8 +16,19 @@ class CampaignContactFileReader
 {
     public const MAX_ROWS = 5000;
 
-    /** @return list<array{first_name: string, last_name: string|null, number: string, email: string|null}> */
+    /** @return list<array<string, mixed>> */
     public function read(UploadedFile $file): array
+    {
+        $preview = $this->preview($file);
+        if ($preview['error_count'] > 0) {
+            throw ValidationException::withMessages(['file' => __('Correct the highlighted file errors before saving this upload.')]);
+        }
+
+        return $preview['contacts'];
+    }
+
+    /** @return array{headers: list<string>, columns: list<string>, rows: list<array<string, mixed>>, errors: list<string>, error_count: int, contacts: list<array<string, mixed>>} */
+    public function preview(UploadedFile $file): array
     {
         try {
             return $this->validateRows($this->rows($file));
@@ -25,7 +36,6 @@ class CampaignContactFileReader
             throw $exception;
         } catch (Throwable $exception) {
             report($exception);
-
             throw ValidationException::withMessages(['file' => __('This file could not be read. Upload a valid, unprotected CSV, XLSX, or XLS file.')]);
         }
     }
@@ -90,10 +100,7 @@ class CampaignContactFileReader
             foreach ($sheet->getRowIterator() as $row) {
                 $values = [];
                 foreach ($row->getCellIterator('A', $sheet->getHighestDataColumn()) as $cell) {
-                    // Never evaluate formulas in uploaded workbooks.
-                    if ($cell->isFormula()) {
-                        throw ValidationException::withMessages(['file' => __('Row :row contains a formula. Replace formulas with plain values.', ['row' => $row->getRowIndex()])]);
-                    }
+                    // Read the literal value; validation marks formulas without evaluating them.
                     $values[] = $cell->getValue();
                 }
                 yield $row->getRowIndex() => $values;
@@ -105,73 +112,108 @@ class CampaignContactFileReader
 
     /**
      * @param  Generator<int, array<mixed>>  $rows
-     * @return list<array{first_name: string, last_name: string|null, number: string, email: string|null}>
+     * @return array{headers: list<string>, columns: list<string>, rows: list<array<string, mixed>>, errors: list<string>, error_count: int, contacts: list<array<string, mixed>>}
      */
     private function validateRows(Generator $rows): array
     {
-        $headers = null;
+        $headers = [];
+        $columns = [];
+        $previewRows = [];
         $contacts = [];
         $errors = [];
+        $numberRows = [];
 
         foreach ($rows as $rowNumber => $values) {
-            if ($rowNumber > self::MAX_ROWS + 1) {
-                throw ValidationException::withMessages(['file' => __('Each file may contain at most 5,000 rows after the header.')]);
+            if ($rowNumber > self::MAX_ROWS + 1 || count($values) > 50) {
+                throw ValidationException::withMessages(['file' => __('Use at most 5,000 contact rows and 50 columns.')]);
             }
 
-            $values = array_map(function (mixed $value): string {
+            $values = array_values(array_map(function (mixed $value): string {
                 if (is_float($value) && floor($value) === $value) {
                     return sprintf('%.0f', $value);
                 }
 
-                return trim((string) $value);
-            }, $values);
+                return mb_convert_encoding((string) $value, 'UTF-8', 'UTF-8');
+            }, $values));
 
-            if ($headers === null) {
-                $headers = array_map(fn (string $value): string => Str::of($value)->replace("\xEF\xBB\xBF", '')->trim()->lower()->replaceMatches('/[\s-]+/', '_')->toString(), $values);
+            if ($rowNumber === 1) {
+                $headers = $values;
+                $columns = array_map(fn (string $value): string => Str::of($value)->replace("\xEF\xBB\xBF", '')->trim()->lower()->replaceMatches('/[\\s-]+/', '_')->toString(), $values);
                 foreach (['first_name', 'number'] as $required) {
-                    if (! in_array($required, $headers, true)) {
-                        throw ValidationException::withMessages(['file' => __('The first row must include first_name and number headers. Optional headers: last_name, email.')]);
+                    if (! in_array($required, $columns, true)) {
+                        $errors[] = __('Missing required column: :column.', ['column' => $required]);
                     }
                 }
                 foreach (array_keys(CampaignContactRules::rules()) as $field) {
-                    if (count(array_keys($headers, $field, true)) > 1) {
-                        throw ValidationException::withMessages(['file' => __('The :field header appears more than once.', ['field' => $field])]);
+                    if (count(array_keys($columns, $field, true)) > 1) {
+                        $errors[] = __('The :field column appears more than once.', ['field' => $field]);
                     }
                 }
 
                 continue;
             }
 
-            if (array_filter($values, fn (string $value): bool => $value !== '') === []) {
+            if (array_filter($values, fn (string $value): bool => trim($value) !== '') === []) {
                 continue;
+            }
+
+            if (count($values) > count($headers)) {
+                $errors[] = __('Row :row has more cells than the header. Give every column a heading or remove the extra cells.', ['row' => $rowNumber]);
             }
 
             $contact = [];
             foreach (array_keys(CampaignContactRules::rules()) as $field) {
-                $position = array_search($field, $headers, true);
-                $value = $position === false ? '' : ($values[$position] ?? '');
+                $position = array_search($field, $columns, true);
+                $value = $position === false ? '' : trim($values[$position] ?? '');
                 $contact[$field] = $value === '' ? null : $value;
             }
 
-            $validator = Validator::make($contact, CampaignContactRules::rules());
-            if ($validator->fails()) {
-                $errors[] = __('Row :row: :message', ['row' => $rowNumber, 'message' => implode(' ', $validator->errors()->all())]);
-                if (count($errors) >= 10) {
-                    break;
+            $validator = Validator::make($contact, CampaignContactRules::rules(), CampaignContactRules::messages());
+            $previewRow = new ContactFilePreviewRow($rowNumber, $values);
+            foreach ($validator->errors()->messages() as $field => $messages) {
+                $position = array_search($field, $columns, true);
+                if ($position !== false) {
+                    foreach ($messages as $message) {
+                        $previewRow->addError($position, $message);
+                    }
                 }
-            } else {
-                /** @var array{first_name: string, last_name: string|null, number: string, email: string|null} $contact */
-                $contacts[] = $contact;
             }
+            foreach ($values as $position => $value) {
+                if (str_starts_with(trim($value), '=')) {
+                    $previewRow->addError($position, __('Replace formulas with plain values.'));
+                }
+            }
+
+            $normalized = preg_replace('/\\D/', '', $contact['number'] ?? '');
+            $numberPosition = array_search('number', $columns, true);
+            if ($normalized !== '' && $numberPosition !== false) {
+                if (isset($numberRows[$normalized])) {
+                    $previous = $numberRows[$normalized];
+                    $previewRow->addError($numberPosition, __('Duplicate number; also appears on row :row.', ['row' => $previewRows[$previous]->rowNumber]));
+                    $previewRows[$previous]->addError($numberPosition, __('Duplicate number; also appears on row :row.', ['row' => $rowNumber]));
+                } else {
+                    $numberRows[$normalized] = count($previewRows);
+                }
+            }
+
+            $previewRows[] = $previewRow;
+            $contacts[] = [...$contact, 'row_number' => $rowNumber, 'normalized_number' => $normalized];
         }
 
-        if ($errors !== []) {
-            throw ValidationException::withMessages(['file' => implode(' ', $errors)]);
-        }
         if ($contacts === []) {
-            throw ValidationException::withMessages(['file' => __('The file must contain at least one contact below the header row.')]);
+            $errors[] = __('The file must contain at least one contact below the header row.');
         }
 
-        return $contacts;
+        $errorCount = count($errors);
+        $publicRows = [];
+        foreach ($previewRows as $row) {
+            foreach ($row->errors as $messages) {
+                $errorCount += count($messages);
+            }
+            // Keep column-indexed errors an object even when the first cell is the only error.
+            $publicRows[] = $row->toArray();
+        }
+
+        return ['headers' => $headers, 'columns' => $columns, 'rows' => $publicRows, 'errors' => $errors, 'error_count' => $errorCount, 'contacts' => $contacts];
     }
 }

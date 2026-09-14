@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\ContactImportStatus;
+use App\Enums\ContactUploadMode;
+use App\Enums\ContactUploadSource;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,7 +19,12 @@ return new class extends Migration
             $table->ulid('public_id')->unique();
             $table->foreignId('campaign_id')->constrained()->cascadeOnDelete();
             $table->string('file_name');
+            $table->string('file_path')->nullable();
+            $table->unsignedTinyInteger('source')->default(ContactUploadSource::DEFAULT);
+            $table->unsignedTinyInteger('mode')->default(ContactUploadMode::DEFAULT);
+            $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
             $table->unsignedInteger('contact_count');
+            $table->unsignedInteger('removed_count')->default(0);
             $table->unsignedTinyInteger('status')->default(ContactImportStatus::DEFAULT);
             $table->json('rows')->nullable();
             $table->timestamp('synced_at')->nullable();

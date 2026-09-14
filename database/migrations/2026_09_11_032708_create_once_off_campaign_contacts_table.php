@@ -18,9 +18,13 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name')->nullable();
             $table->string('number', 32);
+            $table->string('normalized_number', 32)->nullable();
             $table->string('email')->nullable();
+            $table->foreignId('removed_by_import_id')->nullable()->constrained('once_off_campaign_contact_imports', indexName: 'contacts_removed_by_import_fk')->nullOnDelete();
+            $table->softDeletes();
             $table->timestamps();
             $table->index(['campaign_id', 'created_at']);
+            $table->index(['campaign_id', 'normalized_number'], 'contacts_campaign_number_index');
         });
     }
 

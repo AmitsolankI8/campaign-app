@@ -22,7 +22,7 @@ class IndexOnceOffCampaignContactImportRequest extends DataTableRequest
 
     public function filterDefaults(): array
     {
-        return ['status' => ContactImportStatus::DEFAULT];
+        return ['status' => null];
     }
 
     public function applyFilters(Builder $query, array $filters): void

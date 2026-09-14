@@ -2,11 +2,13 @@
 
 namespace App\Enums;
 
-enum ContactImportStatus: int
+enum ContactUploadRowStatus: int
 {
     case Pending = 1;
-    case Synced = 2;
-    case PartiallySynced = 3;
+    case Added = 2;
+    case Updated = 3;
+    case Skipped = 4;
+    case Failed = 5;
 
     public const DEFAULT = self::Pending->value;
 
@@ -14,8 +16,10 @@ enum ContactImportStatus: int
     {
         return match ($this) {
             self::Pending => 'pending',
-            self::Synced => 'synced',
-            self::PartiallySynced => 'partially_synced',
+            self::Added => 'added',
+            self::Updated => 'updated',
+            self::Skipped => 'skipped',
+            self::Failed => 'failed',
         };
     }
 
@@ -23,21 +27,23 @@ enum ContactImportStatus: int
     {
         return match ($this) {
             self::Pending => __('Pending'),
-            self::Synced => __('Completed'),
-            self::PartiallySynced => __('Partially synced'),
+            self::Added => __('Added'),
+            self::Updated => __('Updated'),
+            self::Skipped => __('Skipped'),
+            self::Failed => __('Failed'),
         };
     }
 
     /** @return list<int> */
     public static function values(): array
     {
-        return array_map(fn (self $status): int => $status->value, self::cases());
+        return array_map(fn (self $item): int => $item->value, self::cases());
     }
 
     /** @return list<array{value: int, key: string, label: string}> */
     public static function options(): array
     {
-        return array_map(fn (self $status): array => $status->toArray(), self::cases());
+        return array_map(fn (self $item): array => $item->toArray(), self::cases());
     }
 
     /** @return array{value: int, key: string, label: string} */

@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
-import { FileUp, Plus, RefreshCw } from '@lucide/vue';
-import { ref } from 'vue';
+import { Head, Link, useForm, useHttp } from '@inertiajs/vue3';
+import { ChevronDown, Eye, FileUp, Plus } from '@lucide/vue';
+import { computed, ref, watch } from 'vue';
+import { index as campaignsIndex } from '@/actions/App/Http/Controllers/CampaignController';
 import { store as storeContact } from '@/actions/App/Http/Controllers/OnceOffCampaignContactController';
 import {
+    index,
     store as storeImport,
-    sync,
+    preview,
+    show as showUpload,
 } from '@/actions/App/Http/Controllers/OnceOffCampaignContactImportController';
+import { show } from '@/actions/App/Http/Controllers/OnceOffCampaignController';
 import DataTable from '@/components/data-table/DataTable.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +22,11 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -30,47 +39,97 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { usePermissions } from '@/composables/usePermissions';
 import type { DataTableColumn, DataTableData } from '@/types/data-table';
-import { CONTACT_IMPORT_STATUS_KEY } from '../types';
+import {
+    CAMPAIGN_STATUS_KEY,
+    CONTACT_IMPORT_STATUS_KEY,
+    CONTACT_UPLOAD_MODE_KEY,
+} from '../types';
 import type {
     Campaign,
+    ContactFilePreview,
     ContactImportStatus,
+    ContactUploadMode,
     OnceOffCampaignContactImport,
 } from '../types';
+import FilePreviewDialog from './FilePreviewDialog.vue';
 
 const props = defineProps<{
     campaign: Campaign;
     contactImports: DataTableData<OnceOffCampaignContactImport>;
     importStatuses: ContactImportStatus[];
+    uploadModes: ContactUploadMode[];
 }>();
-
 const { hasPermissions } = usePermissions();
+defineOptions({
+    layout: ({ campaign }: { campaign: Campaign }) => ({
+        breadcrumbs: [
+            { title: 'Campaigns', href: campaignsIndex() },
+            { title: campaign.name, href: show(campaign.id) },
+            { title: 'Upload Contacts', href: index(campaign.id) },
+        ],
+    }),
+});
+const uploadExpanded = ref(false);
 const method = ref<'manual' | 'file'>('manual');
 const fileInput = ref<HTMLInputElement | null>(null);
-const syncingId = ref<string | null>(null);
+const selectedMode = ref(
+    String(
+        props.uploadModes.find(
+            (mode) => mode.key === CONTACT_UPLOAD_MODE_KEY.append,
+        )!.value,
+    ),
+);
+const availableModes = computed(() =>
+    props.uploadModes.filter(
+        (mode) =>
+            mode.key !== CONTACT_UPLOAD_MODE_KEY.replace ||
+            (method.value === 'file' &&
+                props.campaign.status.key === CAMPAIGN_STATUS_KEY.draft),
+    ),
+);
+watch(availableModes, (modes) => {
+    if (!modes.some((mode) => String(mode.value) === selectedMode.value)) {
+        selectedMode.value = String(modes[0].value);
+    }
+});
 const contactForm = useForm({
     first_name: '',
     last_name: '',
     number: '',
     email: '',
+    mode: Number(selectedMode.value),
 });
-const uploadForm = useForm<{ file: File | null }>({ file: null });
-const syncForm = useForm<{ sync?: string }>({});
-
+const uploadForm = useForm<{ file: File | null; mode: number }>({
+    file: null,
+    mode: Number(selectedMode.value),
+});
+const previewRequest = useHttp<
+    { file: File | null; mode: number },
+    ContactFilePreview
+>({ file: null, mode: Number(selectedMode.value) });
+const fileBusy = computed(
+    () => uploadForm.processing || previewRequest.processing,
+);
+const filePreview = ref<ContactFilePreview | null>(null);
+const previewOpen = ref(false);
+const previewError = ref('');
 const columns: DataTableColumn<OnceOffCampaignContactImport>[] = [
-    { key: 'file_name', label: 'File', cellClass: 'font-medium' },
+    { key: 'file_name', label: 'Upload', cellClass: 'font-medium' },
+    { key: 'source', label: 'Source', sortable: false },
+    { key: 'mode', label: 'Mode', sortable: false },
     { key: 'contact_count', label: 'Contacts' },
+    { key: 'processed_count', label: 'Processed', sortable: false },
     { key: 'status', label: 'Status' },
+    { key: 'uploaded_by', label: 'Uploaded by', sortable: false },
     { key: 'created_at', label: 'Uploaded at', format: 'datetime' },
-    { key: 'synced_at', label: 'Synced at', format: 'datetime' },
     {
         key: 'actions',
         label: 'Actions',
         sortable: false,
         searchable: false,
-        headerClass: 'w-32 text-right',
+        headerClass: 'w-32',
     },
 ];
-
 function addContact() {
     if (
         !hasPermissions(['campaigns.view', 'campaigns.edit'], true) ||
@@ -79,62 +138,73 @@ function addContact() {
         return;
     }
 
+    contactForm.mode = Number(selectedMode.value);
     contactForm.post(storeContact.url(props.campaign.id), {
         preserveScroll: true,
         onSuccess: () => contactForm.reset(),
     });
 }
-
 function selectFile(event: Event) {
     uploadForm.file = (event.target as HTMLInputElement).files?.[0] ?? null;
     uploadForm.clearErrors();
+    previewRequest.clearErrors();
+    previewError.value = '';
+    filePreview.value = null;
 }
-
-function uploadFile() {
+async function uploadFile() {
     if (
         !hasPermissions(['campaigns.view', 'campaigns.edit'], true) ||
-        uploadForm.processing
+        fileBusy.value ||
+        !uploadForm.file
     ) {
         return;
     }
 
-    uploadForm.post(storeImport.url(props.campaign.id), {
-        preserveScroll: true,
-        onSuccess: () => {
-            uploadForm.reset();
+    previewError.value = '';
+    uploadForm.clearErrors();
+    previewRequest.clearErrors();
+    filePreview.value = null;
+    previewOpen.value = false;
+    previewRequest.file = uploadForm.file;
+    previewRequest.mode = Number(selectedMode.value);
+    uploadForm.mode = previewRequest.mode;
 
-            if (fileInput.value) {
-                fileInput.value.value = '';
-            }
-        },
-    });
-}
+    try {
+        const result = await previewRequest.post(
+            preview.url(props.campaign.id),
+        );
 
-function syncImport(contactImport: OnceOffCampaignContactImport) {
-    if (
-        !hasPermissions(['campaigns.view', 'campaigns.edit'], true) ||
-        syncForm.processing ||
-        contactImport.status.key !== CONTACT_IMPORT_STATUS_KEY.pending
-    ) {
-        return;
-    }
+        if (result.error_count > 0) {
+            filePreview.value = result;
+            previewOpen.value = true;
 
-    syncingId.value = contactImport.id;
-    syncForm.clearErrors();
-    syncForm.post(
-        sync.url({
-            campaign: props.campaign.id,
-            contactImport: contactImport.id,
-        }),
-        {
+            return;
+        }
+
+        if (!hasPermissions(['campaigns.view', 'campaigns.edit'], true)) {
+            return;
+        }
+
+        uploadForm.post(storeImport.url(props.campaign.id), {
             preserveScroll: true,
-            onFinish: () => {
-                syncingId.value = null;
-            },
-        },
-    );
+        });
+    } catch {
+        if (previewRequest.hasErrors) {
+            const errors = Object.values(previewRequest.errors).flat();
+            filePreview.value = {
+                headers: [],
+                columns: [],
+                rows: [],
+                errors,
+                error_count: errors.length,
+            };
+            previewOpen.value = true;
+        } else {
+            previewError.value =
+                'Unable to validate the file. Please try again.';
+        }
+    }
 }
-
 function downloadTemplate() {
     if (!hasPermissions(['campaigns.view', 'campaigns.edit'], true)) {
         return;
@@ -154,217 +224,292 @@ function downloadTemplate() {
 </script>
 
 <template>
+    <Head :title="`Upload Contacts: ${campaign.name}`" />
     <div
         v-if="hasPermissions(['campaigns.view', 'campaigns.edit'], true)"
         class="space-y-6"
     >
-        <Card>
-            <CardHeader>
-                <CardTitle>Upload Contacts</CardTitle>
-                <CardDescription
-                    >Add a contact manually, or upload a file and sync it when
-                    ready.</CardDescription
-                >
-            </CardHeader>
-            <CardContent class="space-y-6">
-                <div
-                    class="flex flex-wrap gap-2"
-                    aria-label="Contact upload method"
-                >
-                    <Button
-                        type="button"
-                        :variant="method === 'manual' ? 'default' : 'outline'"
-                        :aria-pressed="method === 'manual'"
-                        @click="method = 'manual'"
+        <Collapsible v-model:open="uploadExpanded" as-child>
+            <Card class="gap-0">
+                <CardHeader>
+                    <CardTitle>
+                        <CollapsibleTrigger
+                            class="flex w-full items-center justify-between gap-4 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                            Upload Contacts
+                            <ChevronDown
+                                class="size-5 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none"
+                                :class="{ 'rotate-180': uploadExpanded }"
+                                aria-hidden="true"
+                            />
+                        </CollapsibleTrigger>
+                    </CardTitle>
+                    <CardDescription
+                        >Add a contact manually, or upload a file and sync it
+                        when ready.</CardDescription
                     >
-                        <Plus class="size-4" />Manual entry
-                    </Button>
-                    <Button
-                        type="button"
-                        :variant="method === 'file' ? 'default' : 'outline'"
-                        :aria-pressed="method === 'file'"
-                        @click="method = 'file'"
-                    >
-                        <FileUp class="size-4" />File upload
-                    </Button>
-                </div>
-
-                <form
-                    v-if="method === 'manual'"
-                    class="space-y-6"
-                    novalidate
-                    @submit.prevent="addContact"
-                >
-                    <div class="grid gap-5 md:grid-cols-2">
-                        <div class="grid gap-2">
-                            <Label for="contact-first-name" required
-                                >First name</Label
+                </CardHeader>
+                <CollapsibleContent v-show="uploadExpanded" force-mount>
+                    <CardContent class="space-y-6 pt-6">
+                        <div class="grid max-w-lg gap-2">
+                            <Label for="upload-mode"
+                                >When syncing this upload</Label
                             >
-                            <Input
-                                id="contact-first-name"
-                                v-model="contactForm.first_name"
-                                maxlength="255"
-                                aria-required="true"
-                                autocomplete="given-name"
-                                :aria-invalid="
-                                    Boolean(contactForm.errors.first_name)
-                                "
-                            />
-                            <InputError
-                                :message="contactForm.errors.first_name"
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="contact-last-name"
-                                >Last name (optional)</Label
+                            <Select v-model="selectedMode"
+                                ><SelectTrigger id="upload-mode"
+                                    ><SelectValue /></SelectTrigger
+                                ><SelectContent
+                                    ><SelectItem
+                                        v-for="mode in availableModes"
+                                        :key="mode.key"
+                                        :value="String(mode.value)"
+                                        >{{ mode.label }}</SelectItem
+                                    ></SelectContent
+                                ></Select
                             >
-                            <Input
-                                id="contact-last-name"
-                                v-model="contactForm.last_name"
-                                maxlength="255"
-                                autocomplete="family-name"
-                                :aria-invalid="
-                                    Boolean(contactForm.errors.last_name)
-                                "
-                            />
+                            <p class="text-sm text-muted-foreground">
+                                Matching uses the phone number within this
+                                campaign. Blank optional fields preserve saved
+                                values when updating.
+                            </p>
                             <InputError
-                                :message="contactForm.errors.last_name"
-                            />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="contact-number" required>Number</Label>
-                            <Input
-                                id="contact-number"
-                                v-model="contactForm.number"
-                                type="tel"
-                                maxlength="32"
-                                aria-required="true"
-                                autocomplete="tel"
-                                placeholder="e.g. +919876543210"
-                                :aria-invalid="
-                                    Boolean(contactForm.errors.number)
+                                :message="
+                                    contactForm.errors.mode ||
+                                    uploadForm.errors.mode ||
+                                    previewRequest.errors.mode
                                 "
                             />
-                            <InputError :message="contactForm.errors.number" />
                         </div>
-                        <div class="grid gap-2">
-                            <Label for="contact-email">Email (optional)</Label>
-                            <Input
-                                id="contact-email"
-                                v-model="contactForm.email"
-                                type="email"
-                                maxlength="255"
-                                autocomplete="email"
-                                :aria-invalid="
-                                    Boolean(contactForm.errors.email)
+                        <div
+                            class="flex flex-wrap gap-2"
+                            aria-label="Contact upload method"
+                        >
+                            <Button
+                                type="button"
+                                :variant="
+                                    method === 'manual' ? 'default' : 'outline'
                                 "
-                            />
-                            <InputError :message="contactForm.errors.email" />
+                                :aria-pressed="method === 'manual'"
+                                @click="method = 'manual'"
+                            >
+                                <Plus class="size-4" />Manual entry
+                            </Button>
+                            <Button
+                                type="button"
+                                :variant="
+                                    method === 'file' ? 'default' : 'outline'
+                                "
+                                :aria-pressed="method === 'file'"
+                                @click="method = 'file'"
+                            >
+                                <FileUp class="size-4" />File upload
+                            </Button>
                         </div>
-                    </div>
-                    <div
-                        class="flex flex-wrap items-center justify-between gap-3"
-                    >
-                        <p class="text-sm text-muted-foreground">
-                            Manual entries are added to Contacts immediately.
-                        </p>
-                        <Button
-                            type="submit"
-                            :disabled="contactForm.processing"
-                        >
-                            <Spinner v-if="contactForm.processing" />Add contact
-                        </Button>
-                    </div>
-                </form>
 
-                <form
-                    v-else
-                    class="space-y-5"
-                    novalidate
-                    @submit.prevent="uploadFile"
-                >
-                    <div
-                        class="space-y-2 rounded-lg border bg-muted/20 p-4 text-sm"
-                    >
-                        <p>
-                            Use a header row with
-                            <strong>first_name</strong> and
-                            <strong>number</strong>. Optional columns:
-                            <strong>last_name</strong>, <strong>email</strong>.
-                        </p>
-                        <p class="text-muted-foreground">
-                            CSV, XLSX, or XLS · Maximum 2 MB and 5,000 contacts.
-                            Only the first Excel worksheet is imported. Format
-                            phone numbers as text to preserve leading zeros and
-                            country codes. Use plain values instead of formulas.
-                        </p>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            @click="downloadTemplate"
-                            >Download CSV template</Button
+                        <form
+                            v-if="method === 'manual'"
+                            class="space-y-6"
+                            novalidate
+                            @submit.prevent="addContact"
                         >
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="contact-file" required>Contact file</Label>
-                        <input
-                            id="contact-file"
-                            ref="fileInput"
-                            type="file"
-                            accept=".csv,.xlsx,.xls"
-                            aria-required="true"
-                            :disabled="uploadForm.processing"
-                            :aria-invalid="Boolean(uploadForm.errors.file)"
-                            class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-muted file:px-3 file:py-1 file:text-foreground"
-                            @change="selectFile"
-                        />
-                        <InputError :message="uploadForm.errors.file" />
-                    </div>
-                    <p
-                        v-if="uploadForm.progress"
-                        class="text-sm text-muted-foreground"
-                        role="status"
-                    >
-                        Uploading: {{ uploadForm.progress.percentage }}%
-                    </p>
-                    <div
-                        class="flex flex-wrap items-center justify-between gap-3"
-                    >
-                        <p class="text-sm text-muted-foreground">
-                            Your file will stay pending until you click Sync
-                            below.
-                        </p>
-                        <Button
-                            type="submit"
-                            :disabled="
-                                !uploadForm.file || uploadForm.processing
-                            "
-                        >
-                            <Spinner v-if="uploadForm.processing" />Upload to
-                            pending list
-                        </Button>
-                    </div>
-                </form>
-            </CardContent>
-        </Card>
+                            <div class="grid gap-5 md:grid-cols-2">
+                                <div class="grid gap-2">
+                                    <Label for="contact-first-name" required
+                                        >First name</Label
+                                    >
+                                    <Input
+                                        id="contact-first-name"
+                                        v-model="contactForm.first_name"
+                                        maxlength="255"
+                                        aria-required="true"
+                                        autocomplete="given-name"
+                                        :aria-invalid="
+                                            Boolean(
+                                                contactForm.errors.first_name,
+                                            )
+                                        "
+                                    />
+                                    <InputError
+                                        :message="contactForm.errors.first_name"
+                                    />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label for="contact-last-name"
+                                        >Last name (optional)</Label
+                                    >
+                                    <Input
+                                        id="contact-last-name"
+                                        v-model="contactForm.last_name"
+                                        maxlength="255"
+                                        autocomplete="family-name"
+                                        :aria-invalid="
+                                            Boolean(
+                                                contactForm.errors.last_name,
+                                            )
+                                        "
+                                    />
+                                    <InputError
+                                        :message="contactForm.errors.last_name"
+                                    />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label for="contact-number" required
+                                        >Number</Label
+                                    >
+                                    <Input
+                                        id="contact-number"
+                                        v-model="contactForm.number"
+                                        type="tel"
+                                        maxlength="32"
+                                        aria-required="true"
+                                        autocomplete="tel"
+                                        placeholder="e.g. +919876543210"
+                                        :aria-invalid="
+                                            Boolean(contactForm.errors.number)
+                                        "
+                                    />
+                                    <InputError
+                                        :message="contactForm.errors.number"
+                                    />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label for="contact-email"
+                                        >Email (optional)</Label
+                                    >
+                                    <Input
+                                        id="contact-email"
+                                        v-model="contactForm.email"
+                                        type="email"
+                                        maxlength="255"
+                                        autocomplete="email"
+                                        :aria-invalid="
+                                            Boolean(contactForm.errors.email)
+                                        "
+                                    />
+                                    <InputError
+                                        :message="contactForm.errors.email"
+                                    />
+                                </div>
+                            </div>
+                            <div
+                                class="flex flex-wrap items-center justify-between gap-3"
+                            >
+                                <p class="text-sm text-muted-foreground">
+                                    Manual entries stay pending until you sync
+                                    them. Include + and the country code in the
+                                    number.
+                                </p>
+                                <Button
+                                    type="submit"
+                                    :disabled="contactForm.processing"
+                                >
+                                    <Spinner
+                                        v-if="contactForm.processing"
+                                    />Save to Uploaded Contacts
+                                </Button>
+                            </div>
+                        </form>
 
-        <section class="space-y-3" aria-label="Contact imports">
+                        <form
+                            v-else
+                            class="space-y-5"
+                            novalidate
+                            @submit.prevent="uploadFile"
+                        >
+                            <div
+                                class="space-y-2 rounded-lg border bg-muted/20 p-4 text-sm"
+                            >
+                                <p>
+                                    Use a header row with
+                                    <strong>first_name</strong> and
+                                    <strong>number</strong>. Optional columns:
+                                    <strong>last_name</strong>,
+                                    <strong>email</strong>.
+                                </p>
+                                <p class="text-muted-foreground">
+                                    CSV, XLSX, or XLS · Maximum 2 MB and 5,000
+                                    contacts. Include + and the country code in
+                                    every number. Only the first Excel worksheet
+                                    is imported. Format phone numbers as text to
+                                    preserve leading zeros and country codes.
+                                    Use plain values instead of formulas.
+                                </p>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    @click="downloadTemplate"
+                                    >Download CSV template</Button
+                                >
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="contact-file" required
+                                    >Contact file</Label
+                                >
+                                <input
+                                    id="contact-file"
+                                    ref="fileInput"
+                                    type="file"
+                                    accept=".csv,.xlsx,.xls"
+                                    aria-required="true"
+                                    :disabled="fileBusy"
+                                    :aria-invalid="
+                                        Boolean(uploadForm.errors.file)
+                                    "
+                                    class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-muted file:px-3 file:py-1 file:text-foreground"
+                                    @change="selectFile"
+                                />
+                                <InputError
+                                    :message="
+                                        previewRequest.errors.file ||
+                                        uploadForm.errors.file ||
+                                        previewError
+                                    "
+                                />
+                            </div>
+                            <p
+                                v-if="previewRequest.progress"
+                                class="text-sm text-muted-foreground"
+                                role="status"
+                            >
+                                Uploading:
+                                {{ previewRequest.progress.percentage }}%
+                            </p>
+                            <div
+                                class="flex flex-wrap items-center justify-between gap-3"
+                            >
+                                <p class="text-sm text-muted-foreground">
+                                    Valid files are saved to Uploaded Contacts.
+                                    Any errors will be shown for correction.
+                                </p>
+                                <Button
+                                    type="submit"
+                                    :disabled="!uploadForm.file || fileBusy"
+                                >
+                                    <Spinner v-if="fileBusy" />Upload file
+                                </Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </CollapsibleContent>
+            </Card>
+        </Collapsible>
+
+        <section class="space-y-3" aria-label="Uploaded Contacts">
             <div>
-                <h2 class="text-lg font-semibold">Contact imports</h2>
+                <h2 class="text-lg font-semibold">Uploaded Contacts</h2>
                 <p class="text-sm text-muted-foreground">
-                    Review pending files and sync them to add their contacts.
-                    Filter by Synced to see completed imports.
+                    Every manual entry and file is saved here first. Open an
+                    upload to review and sync its contacts.
                 </p>
             </div>
-            <InputError :message="syncForm.errors.sync" />
+
             <DataTable
                 :data="contactImports"
                 :columns="columns"
                 prop-name="contactImports"
-                caption="Contact imports"
+                caption="Uploaded Contacts"
                 empty-message="No imports found."
-                :reload-props="['contactSummary']"
             >
                 <template #extra-filters="{ filters, loading }">
                     <Select
@@ -401,27 +546,31 @@ function downloadTemplate() {
                         >{{ row.status.label }}</Badge
                     ></template
                 >
-                <template #cell-actions="{ row }">
-                    <div class="flex justify-end">
-                        <Button
-                            v-if="
-                                row.status.key ===
-                                CONTACT_IMPORT_STATUS_KEY.pending
+                <template #cell-source="{ row }"
+                    ><Badge variant="outline">{{
+                        row.source.label
+                    }}</Badge></template
+                >
+                <template #cell-mode="{ row }">{{ row.mode.label }}</template>
+                <template #cell-processed_count="{ row }"
+                    >{{ row.processed_count }} /
+                    {{ row.contact_count }}</template
+                >
+                <template #cell-actions="{ row }"
+                    ><Button variant="outline" size="sm" as-child
+                        ><Link
+                            :href="
+                                showUpload.url({
+                                    campaign: campaign.id,
+                                    contactImport: row.id,
+                                })
                             "
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            :disabled="syncForm.processing"
-                            @click="syncImport(row)"
-                        >
-                            <Spinner v-if="syncingId === row.id" /><RefreshCw
-                                v-else
-                                class="size-4"
-                            />{{ syncingId === row.id ? 'Syncing…' : 'Sync' }}
-                        </Button>
-                    </div>
-                </template>
+                            ><Eye class="size-4" />View</Link
+                        ></Button
+                    ></template
+                >
             </DataTable>
         </section>
+        <FilePreviewDialog v-model:open="previewOpen" :preview="filePreview" />
     </div>
 </template>
