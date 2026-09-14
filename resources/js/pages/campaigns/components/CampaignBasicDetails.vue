@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Badge } from '@/components/ui/badge';
 import {
     Card,
     CardContent,
@@ -22,17 +21,10 @@ const { formatDateTime } = useDateTimeFormat();
 <template>
     <Card class="gap-3 py-4">
         <CardHeader class="px-4">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <CardTitle>Basic details</CardTitle>
-                    <CardDescription class="break-words whitespace-pre-wrap">
-                        {{ campaign.short_note || 'No short note' }}
-                    </CardDescription>
-                </div>
-                <Badge variant="secondary">
-                    {{ campaign.status.label }}
-                </Badge>
-            </div>
+            <CardTitle>Basic details</CardTitle>
+            <CardDescription class="break-words whitespace-pre-wrap">
+                {{ campaign.short_note || 'No short note' }}
+            </CardDescription>
         </CardHeader>
         <CardContent class="px-4">
             <dl
@@ -56,6 +48,12 @@ const { formatDateTime } = useDateTimeFormat();
                 <div>
                     <dt class="text-xs text-muted-foreground">Campaign type</dt>
                     <dd class="font-medium">{{ campaign.type.label }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-muted-foreground">
+                        Campaign status
+                    </dt>
+                    <dd class="font-medium">{{ campaign.status.label }}</dd>
                 </div>
                 <div v-if="campaign.type.key === CAMPAIGN_TYPE_KEY.onceOff">
                     <dt class="text-xs text-muted-foreground">Scheduled At</dt>

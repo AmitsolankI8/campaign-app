@@ -5,6 +5,8 @@ import { edit, index } from '@/actions/App/Http/Controllers/CampaignController';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import CampaignBasicDetails from '@/pages/campaigns/components/CampaignBasicDetails.vue';
+import CampaignStatusAction from '@/pages/campaigns/components/CampaignStatusAction.vue';
+import CampaignStatusBadge from '@/pages/campaigns/components/CampaignStatusBadge.vue';
 import { useCampaignTabs } from '@/pages/campaigns/once-off/useCampaignTabs';
 import type { Campaign } from '@/pages/campaigns/types';
 
@@ -44,27 +46,36 @@ const { tabs, selectedTab } = useCampaignTabs();
             class="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]"
         >
             <section class="min-w-0 space-y-4" aria-label="Campaign sections">
-                <nav class="flex flex-wrap gap-2" aria-label="Campaign tabs">
-                    <Button
-                        v-for="tab in tabs"
-                        :key="tab.id"
-                        as-child
-                        :variant="
-                            selectedTab === tab.id ? 'default' : 'outline'
-                        "
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <nav
+                        class="flex flex-wrap gap-2"
+                        aria-label="Campaign tabs"
                     >
-                        <Link
-                            :href="tab.href"
-                            :aria-current="
-                                selectedTab === tab.id ? 'page' : undefined
+                        <Button
+                            v-for="tab in tabs"
+                            :key="tab.id"
+                            as-child
+                            :variant="
+                                selectedTab === tab.id ? 'default' : 'outline'
                             "
-                            preserve-scroll
                         >
-                            <component :is="tab.icon" class="size-4" />
-                            {{ tab.label }}
-                        </Link>
-                    </Button>
-                </nav>
+                            <Link
+                                :href="tab.href"
+                                :aria-current="
+                                    selectedTab === tab.id ? 'page' : undefined
+                                "
+                                preserve-scroll
+                            >
+                                <component :is="tab.icon" class="size-4" />
+                                {{ tab.label }}
+                            </Link>
+                        </Button>
+                    </nav>
+                    <div class="ml-auto flex shrink-0 items-center gap-3">
+                        <CampaignStatusBadge :status="campaign.status" />
+                        <CampaignStatusAction :status="campaign.status" />
+                    </div>
+                </div>
 
                 <slot />
             </section>
