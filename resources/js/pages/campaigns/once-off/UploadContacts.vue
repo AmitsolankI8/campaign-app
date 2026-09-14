@@ -39,6 +39,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { usePermissions } from '@/composables/usePermissions';
 import type { DataTableColumn, DataTableData } from '@/types/data-table';
+import CampaignReadOnlyNotice from '../components/CampaignReadOnlyNotice.vue';
 import {
     CAMPAIGN_STATUS_KEY,
     CONTACT_IMPORT_STATUS_KEY,
@@ -60,6 +61,11 @@ const props = defineProps<{
     uploadModes: ContactUploadMode[];
 }>();
 const { hasPermissions } = usePermissions();
+const canEdit = computed(
+    () =>
+        hasPermissions(['campaigns.view', 'campaigns.edit'], true) &&
+        props.campaign.status.key === CAMPAIGN_STATUS_KEY.draft,
+);
 defineOptions({
     layout: ({ campaign }: { campaign: Campaign }) => ({
         breadcrumbs: [
@@ -131,10 +137,7 @@ const columns: DataTableColumn<OnceOffCampaignContactImport>[] = [
     },
 ];
 function addContact() {
-    if (
-        !hasPermissions(['campaigns.view', 'campaigns.edit'], true) ||
-        contactForm.processing
-    ) {
+    if (!canEdit.value || contactForm.processing) {
         return;
     }
 
@@ -145,6 +148,10 @@ function addContact() {
     });
 }
 function selectFile(event: Event) {
+    if (!canEdit.value) {
+        return;
+    }
+
     uploadForm.file = (event.target as HTMLInputElement).files?.[0] ?? null;
     uploadForm.clearErrors();
     previewRequest.clearErrors();
@@ -152,11 +159,7 @@ function selectFile(event: Event) {
     filePreview.value = null;
 }
 async function uploadFile() {
-    if (
-        !hasPermissions(['campaigns.view', 'campaigns.edit'], true) ||
-        fileBusy.value ||
-        !uploadForm.file
-    ) {
+    if (!canEdit.value || fileBusy.value || !uploadForm.file) {
         return;
     }
 
@@ -181,7 +184,7 @@ async function uploadFile() {
             return;
         }
 
-        if (!hasPermissions(['campaigns.view', 'campaigns.edit'], true)) {
+        if (!canEdit.value) {
             return;
         }
 
@@ -229,7 +232,11 @@ function downloadTemplate() {
         v-if="hasPermissions(['campaigns.view', 'campaigns.edit'], true)"
         class="space-y-6"
     >
-        <Collapsible v-model:open="uploadExpanded" as-child>
+        <CampaignReadOnlyNotice :status="campaign.status">
+            You can review uploaded contacts, but uploading and syncing are
+            allowed only while the campaign is draft.
+        </CampaignReadOnlyNotice>
+        <Collapsible v-if="canEdit" v-model:open="uploadExpanded" as-child>
             <Card class="gap-0">
                 <CardHeader>
                     <CardTitle>
@@ -255,7 +262,7 @@ function downloadTemplate() {
                             <Label for="upload-mode"
                                 >When syncing this upload</Label
                             >
-                            <Select v-model="selectedMode"
+                            <Select v-model="selectedMode" :disabled="!canEdit"
                                 ><SelectTrigger id="upload-mode"
                                     ><SelectValue /></SelectTrigger
                                 ><SelectContent
@@ -320,6 +327,7 @@ function downloadTemplate() {
                                     <Input
                                         id="contact-first-name"
                                         v-model="contactForm.first_name"
+                                        :readonly="!canEdit"
                                         maxlength="255"
                                         aria-required="true"
                                         autocomplete="given-name"
@@ -340,6 +348,7 @@ function downloadTemplate() {
                                     <Input
                                         id="contact-last-name"
                                         v-model="contactForm.last_name"
+                                        :readonly="!canEdit"
                                         maxlength="255"
                                         autocomplete="family-name"
                                         :aria-invalid="
@@ -359,6 +368,7 @@ function downloadTemplate() {
                                     <Input
                                         id="contact-number"
                                         v-model="contactForm.number"
+                                        :readonly="!canEdit"
                                         type="tel"
                                         maxlength="32"
                                         aria-required="true"
@@ -379,6 +389,7 @@ function downloadTemplate() {
                                     <Input
                                         id="contact-email"
                                         v-model="contactForm.email"
+                                        :readonly="!canEdit"
                                         type="email"
                                         maxlength="255"
                                         autocomplete="email"
@@ -400,6 +411,7 @@ function downloadTemplate() {
                                     number.
                                 </p>
                                 <Button
+                                    v-if="canEdit"
                                     type="submit"
                                     :disabled="contactForm.processing"
                                 >
@@ -452,7 +464,7 @@ function downloadTemplate() {
                                     type="file"
                                     accept=".csv,.xlsx,.xls"
                                     aria-required="true"
-                                    :disabled="fileBusy"
+                                    :disabled="!canEdit || fileBusy"
                                     :aria-invalid="
                                         Boolean(uploadForm.errors.file)
                                     "
@@ -483,6 +495,7 @@ function downloadTemplate() {
                                     Any errors will be shown for correction.
                                 </p>
                                 <Button
+                                    v-if="canEdit"
                                     type="submit"
                                     :disabled="!uploadForm.file || fileBusy"
                                 >

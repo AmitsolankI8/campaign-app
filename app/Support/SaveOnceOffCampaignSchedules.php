@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\CampaignStatus;
 use App\Enums\CampaignType;
 use App\Models\Campaign;
 use Illuminate\Support\Carbon;
@@ -16,6 +17,10 @@ class SaveOnceOffCampaignSchedules
         DB::transaction(function () use ($campaign, $attempts): void {
             $campaign = Campaign::query()->lockForUpdate()->findOrFail($campaign->id);
             abort_unless($campaign->campaign_type === CampaignType::OnceOff, 404);
+
+            if ($campaign->status !== CampaignStatus::Draft) {
+                throw ValidationException::withMessages(['schedules' => __('The schedule can only be changed while the campaign is draft.')]);
+            }
 
             if ($attempts === []) {
                 throw ValidationException::withMessages(['schedules' => __('Keep at least one schedule attempt.')]);

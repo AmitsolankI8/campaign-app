@@ -75,6 +75,7 @@
             "phpstan analyse --memory-limit=1G"
         ],
         "test": [
+            "@putenv XDEBUG_MODE=off",
             "@php artisan config:clear --ansi",
             "@lint:check",
             "@types:check",

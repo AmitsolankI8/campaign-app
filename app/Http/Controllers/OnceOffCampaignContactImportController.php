@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CampaignStatus;
 use App\Enums\CampaignType;
 use App\Enums\ContactImportStatus;
 use App\Enums\ContactUploadMode;
@@ -29,6 +30,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -55,6 +57,9 @@ class OnceOffCampaignContactImportController extends Controller
     public function preview(StoreOnceOffCampaignContactImportRequest $request, Campaign $campaign, CampaignContactFileReader $reader): JsonResponse
     {
         $this->authorizeCampaign($campaign);
+        if ($campaign->status !== CampaignStatus::Draft) {
+            throw ValidationException::withMessages(['mode' => __('Contacts can only be uploaded while the campaign is draft.')]);
+        }
         /** @var UploadedFile $file */
         $file = $request->file('file');
         $preview = $reader->preview($file);
@@ -65,6 +70,9 @@ class OnceOffCampaignContactImportController extends Controller
     public function store(StoreOnceOffCampaignContactImportRequest $request, Campaign $campaign, CampaignContactFileReader $reader, StageCampaignContactUpload $stage): RedirectResponse
     {
         $this->authorizeCampaign($campaign);
+        if ($campaign->status !== CampaignStatus::Draft) {
+            throw ValidationException::withMessages(['mode' => __('Contacts can only be uploaded while the campaign is draft.')]);
+        }
         /** @var UploadedFile $file */
         $file = $request->file('file');
         // Revalidate the submitted file instead of trusting the earlier preview.

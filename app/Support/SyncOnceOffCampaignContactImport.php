@@ -24,12 +24,15 @@ class SyncOnceOffCampaignContactImport
             // Every sync locks the campaign first, so overlapping uploads cannot create duplicates.
             $campaign = Campaign::query()->whereKey($campaign->id)->lockForUpdate()->firstOrFail();
             $upload = $campaign->contactImports()->whereKey($contactImport->id)->lockForUpdate()->firstOrFail();
+            if ($campaign->status !== CampaignStatus::Draft) {
+                throw ValidationException::withMessages(['sync' => __('Contacts can only be synced while the campaign is draft.')]);
+            }
             if ($upload->status === ContactImportStatus::Synced) {
                 return;
             }
             $replace = $upload->mode === ContactUploadMode::Replace;
             if ($replace) {
-                if ($rowIds !== null || $campaign->status !== CampaignStatus::Draft || $upload->status !== ContactImportStatus::Pending) {
+                if ($rowIds !== null || $upload->status !== ContactImportStatus::Pending) {
                     throw ValidationException::withMessages(['sync' => __('Replace the entire list together, while the campaign is draft and the upload is pending.')]);
                 }
                 if (! hash_equals($this->plan->make($campaign, $upload)['fingerprint'], $fingerprint ?? '')) {

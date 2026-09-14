@@ -32,6 +32,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useDateTimeFormat } from '@/composables/useDateTimeFormat';
 import { usePermissions } from '@/composables/usePermissions';
 import type { DataTableColumn, DataTableData } from '@/types/data-table';
+import CampaignReadOnlyNotice from '../components/CampaignReadOnlyNotice.vue';
 import {
     CAMPAIGN_STATUS_KEY,
     CONTACT_IMPORT_STATUS_KEY,
@@ -93,8 +94,7 @@ const canSync = computed(
     () =>
         allowed.value &&
         !completed.value &&
-        (!replacing.value ||
-            props.campaign.status.key === CAMPAIGN_STATUS_KEY.draft),
+        props.campaign.status.key === CAMPAIGN_STATUS_KEY.draft,
 );
 const selected = ref<string[]>([]);
 const replacementOpen = ref(false);
@@ -229,6 +229,10 @@ function refreshPreview() {
 <template>
     <Head :title="`Upload: ${upload.file_name}`" />
     <div v-if="allowed" class="min-w-0 space-y-4">
+        <CampaignReadOnlyNotice :status="campaign.status">
+            You can review this upload and download its original file, but
+            syncing is allowed only while the campaign is draft.
+        </CampaignReadOnlyNotice>
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0 space-y-1">
                 <h2 class="text-xl font-semibold tracking-tight break-words">
@@ -335,16 +339,6 @@ function refreshPreview() {
             <p v-if="replacing" class="text-sm text-muted-foreground">
                 Replacement applies the entire upload together. Contacts absent
                 from this file will be removed from this campaign.
-            </p>
-            <p
-                v-if="
-                    replacing &&
-                    campaign.status.key !== CAMPAIGN_STATUS_KEY.draft
-                "
-                class="text-sm text-destructive"
-            >
-                Whole-list replacement is available only while the campaign is
-                draft.
             </p>
             <div v-if="canSync" class="flex flex-wrap gap-2">
                 <Button

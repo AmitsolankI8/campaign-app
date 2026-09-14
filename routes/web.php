@@ -6,6 +6,7 @@ use App\Http\Controllers\OnceOffCampaignContactController;
 use App\Http\Controllers\OnceOffCampaignContactImportController;
 use App\Http\Controllers\OnceOffCampaignController;
 use App\Http\Controllers\OnceOffCampaignScheduleController;
+use App\Http\Controllers\OnceOffCampaignStatusController;
 use App\Http\Controllers\OngoingCampaignController;
 use App\Http\Controllers\UserManagement\RoleController;
 use App\Http\Controllers\UserManagement\UserController;
@@ -19,6 +20,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('campaigns.')
         ->group(function () {
             Route::get('once-off', [OnceOffCampaignController::class, 'show'])->name('once-off.show');
+            Route::post('once-off/launch', [OnceOffCampaignStatusController::class, 'launch'])->name('once-off.launch');
+            Route::post('once-off/stop', [OnceOffCampaignStatusController::class, 'stop'])->name('once-off.stop');
             Route::get('once-off/contacts', [OnceOffCampaignContactController::class, 'index'])->name('once-off.contacts.index');
             Route::get('once-off/contact-imports', [OnceOffCampaignContactImportController::class, 'index'])->name('once-off.contact-imports.index');
             Route::get('once-off/schedule', [OnceOffCampaignScheduleController::class, 'show'])->name('once-off.schedule.show');

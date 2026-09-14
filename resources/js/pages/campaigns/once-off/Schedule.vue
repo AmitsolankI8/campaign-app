@@ -29,6 +29,8 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { useDateTimeFormat } from '@/composables/useDateTimeFormat';
 import { usePermissions } from '@/composables/usePermissions';
+import CampaignReadOnlyNotice from '../components/CampaignReadOnlyNotice.vue';
+import { CAMPAIGN_STATUS_KEY } from '../types';
 import type {
     Campaign,
     CampaignScheduleChannel,
@@ -52,8 +54,10 @@ defineOptions({
 });
 
 const { hasPermissions } = usePermissions();
-const canEdit = computed(() =>
-    hasPermissions(['campaigns.view', 'campaigns.edit'], true),
+const canEdit = computed(
+    () =>
+        hasPermissions(['campaigns.view', 'campaigns.edit'], true) &&
+        props.campaign.status.key === CAMPAIGN_STATUS_KEY.draft,
 );
 const { userTimezone, formatDateTime, formatDateTimeInput, toUtcIso } =
     useDateTimeFormat();
@@ -159,6 +163,11 @@ function submit() {
 
 <template>
     <Head :title="`Schedule: ${campaign.name}`" />
+
+    <CampaignReadOnlyNotice :status="campaign.status">
+        You can view the schedule, but changes are allowed only while the
+        campaign is draft.
+    </CampaignReadOnlyNotice>
 
     <Card>
         <CardHeader>

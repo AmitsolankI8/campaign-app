@@ -23,17 +23,20 @@ class StageCampaignContactUpload
     {
         $path = null;
         try {
-            if ($file !== null) {
-                $path = $file->store('campaign-contact-uploads', 'local');
-                if ($path === false) {
-                    throw new RuntimeException('Unable to store the contact upload.');
-                }
-            }
-
-            return DB::transaction(function () use ($campaign, $user, $mode, $rows, $file, $path): OnceOffCampaignContactImport {
+            return DB::transaction(function () use ($campaign, $user, $mode, $rows, $file, &$path): OnceOffCampaignContactImport {
                 $lockedCampaign = Campaign::query()->whereKey($campaign->id)->lockForUpdate()->firstOrFail();
-                if ($mode === ContactUploadMode::Replace && ($lockedCampaign->status !== CampaignStatus::Draft || $file === null)) {
+                if ($lockedCampaign->status !== CampaignStatus::Draft) {
+                    throw ValidationException::withMessages(['mode' => __('Contacts can only be uploaded while the campaign is draft.')]);
+                }
+                if ($mode === ContactUploadMode::Replace && $file === null) {
                     throw ValidationException::withMessages(['mode' => __('Whole-list replacement requires a file upload and a draft campaign.')]);
+                }
+
+                if ($file !== null) {
+                    $path = $file->store('campaign-contact-uploads', 'local');
+                    if ($path === false) {
+                        throw new RuntimeException('Unable to store the contact upload.');
+                    }
                 }
 
                 $upload = $lockedCampaign->contactImports()->create([

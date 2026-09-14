@@ -73,7 +73,7 @@ const { tabs, selectedTab } = useCampaignTabs();
                     </nav>
                     <div class="ml-auto flex shrink-0 items-center gap-3">
                         <CampaignStatusBadge :status="campaign.status" />
-                        <CampaignStatusAction :status="campaign.status" />
+                        <CampaignStatusAction :campaign="campaign" />
                     </div>
                 </div>
 

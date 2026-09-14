@@ -1,76 +1,89 @@
 <script setup lang="ts">
-import { Ban, Pause, Play, Rocket } from '@lucide/vue';
+import { useForm } from '@inertiajs/vue3';
+import { Rocket, Square } from '@lucide/vue';
+import { useNow } from '@vueuse/core';
 import { computed } from 'vue';
-import type { Component } from 'vue';
 import { toast } from 'vue-sonner';
+import {
+    launch,
+    stop,
+} from '@/actions/App/Http/Controllers/OnceOffCampaignStatusController';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/composables/usePermissions';
 import { CAMPAIGN_STATUS_KEY } from '../types';
-import type { CampaignStatusKey, CampaignStatusPayload } from '../types';
+import type { Campaign } from '../types';
 
-const props = defineProps<{ status: CampaignStatusPayload }>();
+const props = defineProps<{ campaign: Campaign }>();
 const { hasPermissions } = usePermissions();
 const canEdit = computed(() =>
     hasPermissions(['campaigns.view', 'campaigns.edit'], true),
 );
+const form = useForm({});
+const now = useNow({ interval: 1000 });
+const isDraft = computed(
+    () => props.campaign.status.key === CAMPAIGN_STATUS_KEY.draft,
+);
 
-type StatusAction = {
-    label: string;
-    icon: Component;
-    intent: 'launch' | 'pause' | 'resume' | null;
-};
+function canStopAt(time: number): boolean {
+    return (
+        props.campaign.status.key === CAMPAIGN_STATUS_KEY.launched &&
+        props.campaign.scheduled_at !== null &&
+        Date.parse(props.campaign.scheduled_at) > time
+    );
+}
 
-const statusActions: Record<CampaignStatusKey, StatusAction> = {
-    [CAMPAIGN_STATUS_KEY.draft]: {
-        label: 'Launch',
-        icon: Rocket,
-        intent: 'launch',
-    },
-    [CAMPAIGN_STATUS_KEY.launched]: {
-        label: 'Pause',
-        icon: Pause,
-        intent: 'pause',
-    },
-    [CAMPAIGN_STATUS_KEY.running]: {
-        label: 'Pause',
-        icon: Pause,
-        intent: 'pause',
-    },
-    [CAMPAIGN_STATUS_KEY.paused]: {
-        label: 'Resume',
-        icon: Play,
-        intent: 'resume',
-    },
-    [CAMPAIGN_STATUS_KEY.cancelled]: {
-        label: 'Cancelled',
-        icon: Ban,
-        intent: null,
-    },
-};
-
-const action = computed(() => statusActions[props.status.key]);
+const canStop = computed(() => canStopAt(now.value.getTime()));
 
 function handleAction() {
-    if (!canEdit.value || !action.value?.intent) {
+    if (
+        !canEdit.value ||
+        form.processing ||
+        (!isDraft.value && !canStopAt(Date.now()))
+    ) {
         return;
     }
 
-    // UI preview until campaign status transitions are implemented.
-    toast.info(`${action.value.label} is not available yet.`, {
-        description: 'The campaign status has not changed.',
+    const message = isDraft.value
+        ? `Launch "${props.campaign.name}"?`
+        : `Stop "${props.campaign.name}" and return it to Draft?`;
+
+    if (!window.confirm(message)) {
+        return;
+    }
+
+    if (!isDraft.value && !canStopAt(Date.now())) {
+        toast.error(
+            'The campaign can only be stopped before its first scheduled time.',
+        );
+
+        return;
+    }
+
+    const action = isDraft.value ? launch : stop;
+    form.submit(action(props.campaign.id), {
+        preserveScroll: true,
+        onError: (errors) => {
+            toast.error('Campaign status was not changed.', {
+                description: Object.values(errors).join(' '),
+            });
+        },
     });
 }
 </script>
 
 <template>
     <Button
-        v-if="canEdit && action"
+        v-if="canEdit && (isDraft || canStop)"
         type="button"
-        :disabled="action.intent === null"
-        :variant="action.intent === 'pause' ? 'outline' : 'default'"
+        :disabled="form.processing"
+        :variant="canStop ? 'outline' : 'default'"
         @click="handleAction"
     >
-        <component :is="action.icon" class="size-4" aria-hidden="true" />
-        {{ action.label }}
+        <component
+            :is="isDraft ? Rocket : Square"
+            class="size-4"
+            aria-hidden="true"
+        />
+        {{ isDraft ? 'Launch' : 'Stop' }}
     </Button>
 </template>
