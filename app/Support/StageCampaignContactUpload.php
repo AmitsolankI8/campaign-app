@@ -5,7 +5,7 @@ namespace App\Support;
 use App\Enums\CampaignStatus;
 use App\Enums\ContactUploadMode;
 use App\Enums\ContactUploadSource;
-use App\Models\Campaign;
+use App\Models\Campaigns\OnceOffCampaign;
 use App\Models\OnceOffCampaignContactImport;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -19,12 +19,12 @@ use Throwable;
 class StageCampaignContactUpload
 {
     /** @param list<array<string, mixed>> $rows */
-    public function handle(Campaign $campaign, User $user, ContactUploadMode $mode, array $rows, ?UploadedFile $file = null): OnceOffCampaignContactImport
+    public function handle(OnceOffCampaign $campaign, User $user, ContactUploadMode $mode, array $rows, ?UploadedFile $file = null): OnceOffCampaignContactImport
     {
         $path = null;
         try {
             return DB::transaction(function () use ($campaign, $user, $mode, $rows, $file, &$path): OnceOffCampaignContactImport {
-                $lockedCampaign = Campaign::query()->whereKey($campaign->id)->lockForUpdate()->firstOrFail();
+                $lockedCampaign = OnceOffCampaign::query()->whereKey($campaign->id)->lockForUpdate()->firstOrFail();
                 if ($lockedCampaign->status !== CampaignStatus::Draft) {
                     throw ValidationException::withMessages(['mode' => __('Contacts can only be uploaded while the campaign is draft.')]);
                 }

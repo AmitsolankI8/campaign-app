@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Campaigns\OnceOffCampaign;
 use App\Models\Concerns\HasPublicId;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $email
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read Campaign $campaign
+ * @property-read OnceOffCampaign $campaign
  */
 class OnceOffCampaignContact extends Model
 {
@@ -38,9 +39,9 @@ class OnceOffCampaignContact extends Model
     /** @var list<string> */
     protected $hidden = ['id', 'campaign_id'];
 
-    /** @return BelongsTo<Campaign, $this> */
+    /** @return BelongsTo<OnceOffCampaign, $this> */
     public function campaign(): BelongsTo
     {
-        return $this->belongsTo(Campaign::class);
+        return $this->belongsTo(OnceOffCampaign::class, 'campaign_id');
     }
 }

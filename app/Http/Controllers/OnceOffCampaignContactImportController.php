@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CampaignStatus;
-use App\Enums\CampaignType;
 use App\Enums\ContactImportStatus;
 use App\Enums\ContactUploadMode;
 use App\Enums\ContactUploadRowStatus;
@@ -14,7 +13,7 @@ use App\Http\Requests\Campaign\SyncContactUploadRequest;
 use App\Http\Resources\Campaign\CampaignResource;
 use App\Http\Resources\Campaign\ContactUploadRowResource;
 use App\Http\Resources\Campaign\OnceOffCampaignContactImportResource;
-use App\Models\Campaign;
+use App\Models\Campaigns\OnceOffCampaign;
 use App\Models\OnceOffCampaignContact;
 use App\Models\OnceOffCampaignContactImport;
 use App\Models\OnceOffCampaignContactUploadRow;
@@ -37,7 +36,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OnceOffCampaignContactImportController extends Controller
 {
-    public function index(Request $request, Campaign $campaign): Response
+    public function index(Request $request, OnceOffCampaign $campaign): Response
     {
         $this->authorizeCampaign($campaign);
 
@@ -54,7 +53,7 @@ class OnceOffCampaignContactImportController extends Controller
         ]);
     }
 
-    public function preview(StoreOnceOffCampaignContactImportRequest $request, Campaign $campaign, CampaignContactFileReader $reader): JsonResponse
+    public function preview(StoreOnceOffCampaignContactImportRequest $request, OnceOffCampaign $campaign, CampaignContactFileReader $reader): JsonResponse
     {
         $this->authorizeCampaign($campaign);
         if ($campaign->status !== CampaignStatus::Draft) {
@@ -67,7 +66,7 @@ class OnceOffCampaignContactImportController extends Controller
         return response()->json(Arr::except($preview, 'contacts'));
     }
 
-    public function store(StoreOnceOffCampaignContactImportRequest $request, Campaign $campaign, CampaignContactFileReader $reader, StageCampaignContactUpload $stage): RedirectResponse
+    public function store(StoreOnceOffCampaignContactImportRequest $request, OnceOffCampaign $campaign, CampaignContactFileReader $reader, StageCampaignContactUpload $stage): RedirectResponse
     {
         $this->authorizeCampaign($campaign);
         if ($campaign->status !== CampaignStatus::Draft) {
@@ -82,7 +81,7 @@ class OnceOffCampaignContactImportController extends Controller
         return to_route('campaigns.once-off.contact-imports.show', ['campaign' => $campaign, 'contactImport' => $upload]);
     }
 
-    public function show(Request $request, Campaign $campaign, OnceOffCampaignContactImport $contactImport, CampaignContactSyncPlan $plan): Response
+    public function show(Request $request, OnceOffCampaign $campaign, OnceOffCampaignContactImport $contactImport, CampaignContactSyncPlan $plan): Response
     {
         $this->authorizeCampaign($campaign);
         abort_unless($contactImport->campaign_id === $campaign->id, 404);
@@ -109,7 +108,7 @@ class OnceOffCampaignContactImportController extends Controller
         ]);
     }
 
-    public function download(Campaign $campaign, OnceOffCampaignContactImport $contactImport): StreamedResponse
+    public function download(OnceOffCampaign $campaign, OnceOffCampaignContactImport $contactImport): StreamedResponse
     {
         $this->authorizeCampaign($campaign);
         abort_unless($contactImport->campaign_id === $campaign->id && $contactImport->file_path !== null, 404);
@@ -118,7 +117,7 @@ class OnceOffCampaignContactImportController extends Controller
         return Storage::disk('local')->download($contactImport->file_path, $contactImport->file_name, ['X-Content-Type-Options' => 'nosniff']);
     }
 
-    public function sync(SyncContactUploadRequest $request, Campaign $campaign, OnceOffCampaignContactImport $contactImport, SyncOnceOffCampaignContactImport $sync): RedirectResponse
+    public function sync(SyncContactUploadRequest $request, OnceOffCampaign $campaign, OnceOffCampaignContactImport $contactImport, SyncOnceOffCampaignContactImport $sync): RedirectResponse
     {
         $this->authorizeCampaign($campaign);
         $sync->handle($campaign, $contactImport, $request->validated('row_ids'), $request->validated('fingerprint'));
@@ -127,10 +126,9 @@ class OnceOffCampaignContactImportController extends Controller
         return to_route('campaigns.once-off.contact-imports.show', ['campaign' => $campaign, 'contactImport' => $contactImport]);
     }
 
-    private function authorizeCampaign(Campaign $campaign): void
+    private function authorizeCampaign(OnceOffCampaign $campaign): void
     {
         Gate::authorize('campaigns.view');
         Gate::authorize('campaigns.edit');
-        abort_unless($campaign->campaign_type === CampaignType::OnceOff, 404);
     }
 }

@@ -7,6 +7,7 @@ use App\Enums\ContactUploadMode;
 use App\Enums\ContactUploadRowStatus;
 use App\Enums\ContactUploadSource;
 use App\Models\Campaign;
+use App\Models\Campaigns\OnceOffCampaign;
 use App\Models\OnceOffCampaignContact;
 use App\Models\OnceOffCampaignContactImport;
 use App\Models\OnceOffCampaignContactUploadRow;
@@ -28,7 +29,7 @@ beforeEach(function () {
     $this->editor = User::factory()->create();
     $this->editor->givePermissionTo(['campaigns.view', 'campaigns.edit']);
     $this->actingAs($this->editor);
-    $this->campaign = Campaign::factory()->create(['campaign_type' => CampaignType::OnceOff]);
+    $this->campaign = OnceOffCampaign::factory()->create();
 });
 
 function contactCsv(string $rows = "Alice,,+14155550101,\nBob,,+14155550102,\n"): UploadedFile
@@ -36,7 +37,7 @@ function contactCsv(string $rows = "Alice,,+14155550101,\nBob,,+14155550102,\n")
     return UploadedFile::fake()->createWithContent('contacts.csv', "first_name,last_name,number,email\n".$rows);
 }
 
-function stageContactFile(Campaign $campaign, ContactUploadMode $mode = ContactUploadMode::Append, ?UploadedFile $file = null): OnceOffCampaignContactImport
+function stageContactFile(OnceOffCampaign $campaign, ContactUploadMode $mode = ContactUploadMode::Append, ?UploadedFile $file = null): OnceOffCampaignContactImport
 {
     $response = test()->post(route('campaigns.once-off.contact-imports.store', $campaign), [
         'file' => $file ?? contactCsv(), 'mode' => $mode->value,
@@ -118,7 +119,7 @@ test('manual contacts are staged with optional fields empty until explicitly syn
         ->and(OnceOffCampaignContact::count())->toBe(0);
     $this->post(route('campaigns.once-off.contact-imports.sync', [$this->campaign, $upload]))
         ->assertSessionHasNoErrors()->assertRedirect();
-    expect($this->campaign->onceOffContacts()->sole()->first_name)->toBe('Alice')
+    expect($this->campaign->contacts()->sole()->first_name)->toBe('Alice')
         ->and($row->fresh()->status)->toBe(ContactUploadRowStatus::Added)
         ->and($upload->fresh()->status)->toBe(ContactImportStatus::Synced);
 });
@@ -209,7 +210,7 @@ test('Excel uploads retain a private original and expose public row metadata', f
 
 test('upload details download and sync reject another campaign upload', function () {
     $upload = stageContactFile($this->campaign);
-    $other = Campaign::factory()->create(['campaign_type' => CampaignType::OnceOff]);
+    $other = OnceOffCampaign::factory()->create();
     foreach (['show', 'download'] as $action) {
         $this->get(route('campaigns.once-off.contact-imports.'.$action, [$other, $upload]))->assertNotFound();
     }
@@ -224,12 +225,12 @@ test('selected sync tracks partial completion and repeated sync does not add dup
     $this->post($url, ['row_ids' => [$rows[0]->public_id]])->assertSessionHasNoErrors();
     expect($upload->fresh()->status)->toBe(ContactImportStatus::PartiallySynced)
         ->and($rows[1]->fresh()->status)->toBe(ContactUploadRowStatus::Pending)
-        ->and($this->campaign->onceOffContacts()->count())->toBe(1);
+        ->and($this->campaign->contacts()->count())->toBe(1);
     $this->post($url)->assertSessionHasNoErrors();
     $this->post($url)->assertSessionHasNoErrors();
     expect($upload->fresh()->status)->toBe(ContactImportStatus::Synced)
         ->and($upload->fresh()->synced_at)->not->toBeNull()
-        ->and($this->campaign->onceOffContacts()->count())->toBe(2);
+        ->and($this->campaign->contacts()->count())->toBe(2);
 });
 
 test('sync rejects row IDs from another upload without processing valid selections', function () {
@@ -242,11 +243,11 @@ test('sync rejects row IDs from another upload without processing valid selectio
 });
 
 test('append and update match normalized numbers only within the campaign', function (ContactUploadMode $mode, ContactUploadRowStatus $outcome, string $name) {
-    $contact = $this->campaign->onceOffContacts()->create([
+    $contact = $this->campaign->contacts()->create([
         'first_name' => 'Original', 'last_name' => 'Kept', 'number' => '+1 (415) 555-0101', 'email' => 'kept@example.com',
     ]);
-    $other = Campaign::factory()->create(['campaign_type' => CampaignType::OnceOff]);
-    $outside = $other->onceOffContacts()->create(['first_name' => 'Outside', 'number' => '+14155550102']);
+    $other = OnceOffCampaign::factory()->create();
+    $outside = $other->contacts()->create(['first_name' => 'Outside', 'number' => '+14155550102']);
     $upload = stageContactFile($this->campaign, $mode);
     $this->post(route('campaigns.once-off.contact-imports.sync', [$this->campaign, $upload]))->assertSessionHasNoErrors();
     $row = $upload->uploadedRows()->where('row_number', 2)->firstOrFail();
@@ -254,7 +255,7 @@ test('append and update match normalized numbers only within the campaign', func
         ->and($contact->fresh()->last_name)->toBe('Kept')->and($contact->fresh()->email)->toBe('kept@example.com')
         ->and($row->status)->toBe($outcome)->and($row->before_values['first_name'])->toBe('Original')
         ->and($outside->fresh()->first_name)->toBe('Outside')
-        ->and($this->campaign->onceOffContacts()->count())->toBe(2);
+        ->and($this->campaign->contacts()->count())->toBe(2);
 })->with([
     [ContactUploadMode::Append, ContactUploadRowStatus::Skipped, 'Original'],
     [ContactUploadMode::Update, ContactUploadRowStatus::Updated, 'Alice'],
@@ -269,16 +270,16 @@ test('sync revalidates staged rows and can retry a corrected failure', function 
     expect($row->fresh()->status)->toBe(ContactUploadRowStatus::Failed)
         ->and($row->fresh()->error)->not->toBeNull()
         ->and($upload->fresh()->status)->toBe(ContactImportStatus::PartiallySynced)
-        ->and($this->campaign->onceOffContacts()->count())->toBe(1);
+        ->and($this->campaign->contacts()->count())->toBe(1);
     $row->update(['email' => null]);
     $this->post($url, ['row_ids' => [$row->public_id]])->assertSessionHasNoErrors();
     expect($row->fresh()->status)->toBe(ContactUploadRowStatus::Added)
         ->and($row->fresh()->error)->toBeNull()
-        ->and($this->campaign->onceOffContacts()->count())->toBe(2);
+        ->and($this->campaign->contacts()->count())->toBe(2);
 });
 
 test('replacement removes absent contacts with retained history after confirmation', function () {
-    $removed = $this->campaign->onceOffContacts()->create(['first_name' => 'Remove', 'number' => '+14155550999']);
+    $removed = $this->campaign->contacts()->create(['first_name' => 'Remove', 'number' => '+14155550999']);
     $upload = stageContactFile($this->campaign, ContactUploadMode::Replace);
     $plan = $this->get(route('campaigns.once-off.contact-imports.show', [$this->campaign, $upload]))->inertiaProps('syncPlan');
     expect($plan['remove'])->toBe(1)->and($plan['add'])->toBe(2);
@@ -289,11 +290,11 @@ test('replacement removes absent contacts with retained history after confirmati
     expect($removed->fresh()->removed_by_import_id)->toBe($upload->id)
         ->and($upload->fresh()->removed_count)->toBe(1)
         ->and($upload->fresh()->status)->toBe(ContactImportStatus::Synced)
-        ->and($this->campaign->onceOffContacts()->count())->toBe(2);
+        ->and($this->campaign->contacts()->count())->toBe(2);
 });
 
 test('replacement rejects missing stale partial and non-draft confirmations without writes', function (string $scenario) {
-    $original = $this->campaign->onceOffContacts()->create(['first_name' => 'Original', 'number' => '+14155550999']);
+    $original = $this->campaign->contacts()->create(['first_name' => 'Original', 'number' => '+14155550999']);
     $upload = stageContactFile($this->campaign, ContactUploadMode::Replace);
     $plan = $this->get(route('campaigns.once-off.contact-imports.show', [$this->campaign, $upload]))->inertiaProps('syncPlan');
     $payload = ['fingerprint' => $plan['fingerprint']];
@@ -308,14 +309,14 @@ test('replacement rejects missing stale partial and non-draft confirmations with
     }
     $this->postJson(route('campaigns.once-off.contact-imports.sync', [$this->campaign, $upload]), $payload)
         ->assertUnprocessable()->assertJsonValidationErrors('sync');
-    expect($this->campaign->onceOffContacts()->count())->toBe(1)
+    expect($this->campaign->contacts()->count())->toBe(1)
         ->and($original->fresh()->deleted_at)->toBeNull()
         ->and($upload->fresh()->status)->toBe(ContactImportStatus::Pending)
         ->and($upload->uploadedRows()->whereNotNull('synced_at')->count())->toBe(0);
 })->with(['missing', 'stale', 'partial', 'non-draft']);
 
 test('a failed replacement rolls back contacts already processed earlier in the file', function () {
-    $original = $this->campaign->onceOffContacts()->create(['first_name' => 'Original', 'number' => '+14155550101']);
+    $original = $this->campaign->contacts()->create(['first_name' => 'Original', 'number' => '+14155550101']);
     $upload = stageContactFile($this->campaign, ContactUploadMode::Replace);
     $upload->uploadedRows()->where('row_number', 3)->update(['email' => 'invalid']);
     $plan = $this->get(route('campaigns.once-off.contact-imports.show', [$this->campaign, $upload]))->inertiaProps('syncPlan');
@@ -323,7 +324,7 @@ test('a failed replacement rolls back contacts already processed earlier in the 
         'fingerprint' => $plan['fingerprint'],
     ])->assertUnprocessable()->assertJsonValidationErrors('sync');
     expect($original->fresh()->first_name)->toBe('Original')
-        ->and($this->campaign->onceOffContacts()->count())->toBe(1)
+        ->and($this->campaign->contacts()->count())->toBe(1)
         ->and($upload->uploadedRows()->whereNotNull('synced_at')->count())->toBe(0);
 });
 
@@ -336,11 +337,11 @@ test('non-draft replacement staging cleans up its file', function () {
 });
 
 test('contact datatable searches and paginates only active contacts in its campaign', function () {
-    $target = $this->campaign->onceOffContacts()->create(['first_name' => 'Alice', 'number' => '+14155550101']);
-    $this->campaign->onceOffContacts()->create(['first_name' => 'Bob', 'number' => '+14155550102']);
-    $deleted = $this->campaign->onceOffContacts()->create(['first_name' => 'Alice removed', 'number' => '+14155550103']);
+    $target = $this->campaign->contacts()->create(['first_name' => 'Alice', 'number' => '+14155550101']);
+    $this->campaign->contacts()->create(['first_name' => 'Bob', 'number' => '+14155550102']);
+    $deleted = $this->campaign->contacts()->create(['first_name' => 'Alice removed', 'number' => '+14155550103']);
     $deleted->delete();
-    Campaign::factory()->create()->onceOffContacts()->create(['first_name' => 'Alice elsewhere', 'number' => '+14155550104']);
+    OnceOffCampaign::factory()->create()->contacts()->create(['first_name' => 'Alice elsewhere', 'number' => '+14155550104']);
     $this->get(route('campaigns.once-off.contacts.index', [
         $this->campaign, 'contacts' => ['search' => 'Alice', 'search_column' => 'first_name', 'per_page' => 10],
     ]))->assertInertia(fn (Assert $page) => $page->has('contacts.data', 1)

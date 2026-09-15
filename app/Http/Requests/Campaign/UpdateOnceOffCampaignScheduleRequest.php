@@ -2,8 +2,7 @@
 
 namespace App\Http\Requests\Campaign;
 
-use App\Enums\CampaignType;
-use App\Models\Campaign;
+use App\Models\Campaigns\OnceOffCampaign;
 use App\Models\CommunicationProvider;
 use App\Models\OnceOffCampaignSchedule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -22,9 +21,8 @@ class UpdateOnceOffCampaignScheduleRequest extends FormRequest
     /** @return array<string, array<int, mixed>> */
     public function rules(): array
     {
-        /** @var Campaign $campaign */
+        /** @var OnceOffCampaign $campaign */
         $campaign = $this->route('campaign');
-        abort_unless($campaign->campaign_type === CampaignType::OnceOff, 404);
 
         return [
             'schedules' => ['required', 'array', 'list', 'min:1'],

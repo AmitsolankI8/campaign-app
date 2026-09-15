@@ -4,6 +4,7 @@ use App\Enums\CampaignStatus;
 use App\Enums\CampaignType;
 use App\Enums\ContactUploadMode;
 use App\Models\Campaign;
+use App\Models\Campaigns\OnceOffCampaign;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -23,13 +24,13 @@ beforeEach(function () {
     $this->editor = User::factory()->create();
     $this->editor->givePermissionTo(['campaigns.view', 'campaigns.edit']);
     $this->actingAs($this->editor);
-    $this->campaign = Campaign::factory()->onceOff()->create();
-    $this->schedule = $this->campaign->onceOffSchedules()->create([
+    $this->campaign = OnceOffCampaign::factory()->create();
+    $this->schedule = $this->campaign->schedules()->create([
         'attempt_count' => 1,
         'scheduled_at' => now()->addHour(),
         'channel' => array_key_first(CommunicationRegistry::channels()),
     ]);
-    $this->contact = $this->campaign->onceOffContacts()->create([
+    $this->contact = $this->campaign->contacts()->create([
         'first_name' => 'Alice', 'number' => '+14155550101',
     ]);
 });
@@ -101,8 +102,8 @@ test('launch alerts identify every missing requirement without changing status',
 
 test('staged uploads and other campaign contacts do not qualify for launch', function () {
     $this->contact->delete();
-    $other = Campaign::factory()->onceOff()->create();
-    $other->onceOffContacts()->create(['first_name' => 'Bob', 'number' => '+14155550102']);
+    $other = OnceOffCampaign::factory()->create();
+    $other->contacts()->create(['first_name' => 'Bob', 'number' => '+14155550102']);
     $this->post(route('campaigns.once-off.contacts.store', $this->campaign), [
         'first_name' => 'Charlie', 'number' => '+14155550103', 'mode' => ContactUploadMode::Append->value,
     ])->assertSessionHasNoErrors();
@@ -114,8 +115,8 @@ test('staged uploads and other campaign contacts do not qualify for launch', fun
 
 test('launch requires this campaigns first attempt', function () {
     $this->schedule->update(['attempt_count' => 2]);
-    $other = Campaign::factory()->onceOff()->create();
-    $other->onceOffSchedules()->create([
+    $other = OnceOffCampaign::factory()->create();
+    $other->schedules()->create([
         'attempt_count' => 1, 'scheduled_at' => now()->addHour(),
         'channel' => array_key_first(CommunicationRegistry::channels()),
     ]);
@@ -126,7 +127,7 @@ test('launch requires this campaigns first attempt', function () {
 
 test('stop is rejected at and after the first schedule even with future follow ups', function (int $seconds) {
     $this->campaign->update(['status' => CampaignStatus::Launched]);
-    $this->campaign->onceOffSchedules()->create([
+    $this->campaign->schedules()->create([
         'attempt_count' => 2, 'scheduled_at' => now()->addDay(),
         'channel' => array_key_first(CommunicationRegistry::channels()),
     ]);

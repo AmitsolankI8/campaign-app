@@ -3,6 +3,7 @@
 use App\Enums\CampaignStatus;
 use App\Enums\ContactUploadMode;
 use App\Models\Campaign;
+use App\Models\Campaigns\OnceOffCampaign;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -26,10 +27,10 @@ beforeEach(function () {
     $this->editor = User::factory()->create();
     $this->editor->givePermissionTo(['campaigns.view', 'campaigns.edit']);
     $this->actingAs($this->editor);
-    $this->campaign = Campaign::factory()->onceOff()->create();
+    $this->campaign = OnceOffCampaign::factory()->create();
     $this->attempt = ['scheduled_at' => now()->addDay()->utc()->format('Y-m-d\TH:i:s.v\Z'), 'channel' => array_key_first(CommunicationRegistry::channels())];
-    $this->schedule = $this->campaign->onceOffSchedules()->create(['attempt_count' => 1, ...$this->attempt]);
-    $this->contact = $this->campaign->onceOffContacts()->create(['first_name' => 'Existing', 'number' => '+14155550101']);
+    $this->schedule = $this->campaign->schedules()->create(['attempt_count' => 1, ...$this->attempt]);
+    $this->contact = $this->campaign->contacts()->create(['first_name' => 'Existing', 'number' => '+14155550101']);
     $this->upload = app(StageCampaignContactUpload::class)->handle(
         $this->campaign, $this->editor, ContactUploadMode::Append,
         [['first_name' => 'New', 'number' => '+14155550102', 'normalized_number' => '14155550102', 'row_number' => 2]],
@@ -91,10 +92,10 @@ test('non-draft campaigns reject schedule saves manual contacts and file validat
         }
     }
     expect($this->schedule->fresh()->getAttributes())->toBe($schedule)
-        ->and($this->campaign->onceOffSchedules()->count())->toBe(1)
+        ->and($this->campaign->schedules()->count())->toBe(1)
         ->and($this->campaign->contactImports()->count())->toBe(1)
         ->and($this->upload->uploadedRows()->count())->toBe(1)
-        ->and($this->campaign->onceOffContacts()->count())->toBe(1)
+        ->and($this->campaign->contacts()->count())->toBe(1)
         ->and(Storage::disk('local')->allFiles())->toBe($files);
 })->with('non-draft campaign statuses');
 
@@ -113,7 +114,7 @@ test('non-draft campaigns reject all selected and individual syncs in every uplo
     expect($row->fresh()->getAttributes())->toBe($beforeRow)
         ->and($this->upload->fresh()->getAttributes())->toBe($beforeUpload)
         ->and($this->contact->fresh()->getAttributes())->toBe($beforeContact)
-        ->and($this->campaign->onceOffContacts()->count())->toBe(1);
+        ->and($this->campaign->contacts()->count())->toBe(1);
 })->with('non-draft campaign statuses')->with(ContactUploadMode::cases());
 
 test('write services recheck persisted campaign status when supplied a stale draft model', function (string $action) {
@@ -125,9 +126,9 @@ test('write services recheck persisted campaign status when supplied a stale dra
         'upload' => app(StageCampaignContactUpload::class)->handle($this->campaign, $this->editor, ContactUploadMode::Append, [], draftEditingFile()),
         'sync' => app(SyncOnceOffCampaignContactImport::class)->handle($this->campaign, $this->upload),
     })->toThrow(ValidationException::class);
-    expect($this->campaign->onceOffSchedules()->sole()->public_id)->toBe($this->schedule->public_id)
+    expect($this->campaign->schedules()->sole()->public_id)->toBe($this->schedule->public_id)
         ->and($this->campaign->contactImports()->count())->toBe(1)
-        ->and($this->campaign->onceOffContacts()->count())->toBe(1)
+        ->and($this->campaign->contacts()->count())->toBe(1)
         ->and(Storage::disk('local')->allFiles())->toBe($files);
 })->with(['schedule', 'upload', 'sync']);
 
@@ -146,5 +147,5 @@ test('stopping a launched campaign restores schedule upload and sync editing', f
     $this->post(route('campaigns.once-off.contact-imports.sync', [$this->campaign, $this->upload]))
         ->assertSessionHasNoErrors();
     expect($this->campaign->contactImports()->count())->toBe(3)
-        ->and($this->campaign->onceOffContacts()->count())->toBe(2);
+        ->and($this->campaign->contacts()->count())->toBe(2);
 });

@@ -2,26 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\CampaignType;
 use App\Enums\ContactImportStatus;
 use App\Http\Resources\Campaign\CampaignResource;
-use App\Models\Campaign;
+use App\Models\Campaigns\OnceOffCampaign;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class OnceOffCampaignController extends Controller
 {
-    public function show(Campaign $campaign): Response
+    public function show(OnceOffCampaign $campaign): Response
     {
         Gate::authorize('campaigns.view');
-
-        abort_unless($campaign->campaign_type === CampaignType::OnceOff, 404);
 
         return Inertia::render('campaigns/once-off/Show', [
             'campaign' => $campaign->loadMissing('firstOnceOffSchedule')->toResource(CampaignResource::class)->resolve(),
             'contactSummary' => fn () => [
-                'total' => $campaign->onceOffContacts()->count(),
+                'total' => $campaign->contacts()->count(),
                 'pending_imports' => $campaign->contactImports()->where('status', '!=', ContactImportStatus::Synced)->count(),
             ],
         ]);

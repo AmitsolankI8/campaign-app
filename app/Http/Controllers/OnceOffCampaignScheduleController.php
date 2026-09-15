@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\CampaignType;
 use App\Http\Requests\Campaign\UpdateOnceOffCampaignScheduleRequest;
 use App\Http\Resources\Campaign\CampaignResource;
 use App\Http\Resources\Campaign\OnceOffCampaignScheduleResource;
-use App\Models\Campaign;
+use App\Models\Campaigns\OnceOffCampaign;
 use App\Models\CommunicationProvider;
 use App\Support\SaveOnceOffCampaignSchedules;
 use Illuminate\Http\RedirectResponse;
@@ -16,15 +15,14 @@ use Inertia\Response;
 
 class OnceOffCampaignScheduleController extends Controller
 {
-    public function show(Campaign $campaign): Response
+    public function show(OnceOffCampaign $campaign): Response
     {
         Gate::authorize('campaigns.view');
-        abort_unless($campaign->campaign_type === CampaignType::OnceOff, 404);
 
         return Inertia::render('campaigns/once-off/Schedule', [
             'campaign' => $campaign->loadMissing('firstOnceOffSchedule')->toResource(CampaignResource::class)->resolve(),
             'schedules' => fn () => OnceOffCampaignScheduleResource::collection(
-                $campaign->onceOffSchedules()->orderBy('attempt_count')->get(),
+                $campaign->schedules()->orderBy('attempt_count')->get(),
             )->resolve(),
             'channels' => fn () => CommunicationProvider::query()
                 ->select(['channel', 'channel_name', 'channel_position'])
@@ -36,7 +34,7 @@ class OnceOffCampaignScheduleController extends Controller
         ]);
     }
 
-    public function update(UpdateOnceOffCampaignScheduleRequest $request, Campaign $campaign, SaveOnceOffCampaignSchedules $save): RedirectResponse
+    public function update(UpdateOnceOffCampaignScheduleRequest $request, OnceOffCampaign $campaign, SaveOnceOffCampaignSchedules $save): RedirectResponse
     {
         $save->handle($campaign, $request->validated('schedules'));
 

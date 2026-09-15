@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Campaigns\OnceOffCampaign;
 use App\Models\Concerns\HasPublicId;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Illuminate\Support\Carbon;
  * @property int $attempt_count
  * @property Carbon $scheduled_at
  * @property string $channel
- * @property-read Campaign $campaign
+ * @property-read OnceOffCampaign $campaign
  */
 class OnceOffCampaignSchedule extends Model
 {
@@ -32,9 +33,9 @@ class OnceOffCampaignSchedule extends Model
         return ['attempt_count' => 'integer', 'scheduled_at' => 'datetime'];
     }
 
-    /** @return BelongsTo<Campaign, $this> */
+    /** @return BelongsTo<OnceOffCampaign, $this> */
     public function campaign(): BelongsTo
     {
-        return $this->belongsTo(Campaign::class);
+        return $this->belongsTo(OnceOffCampaign::class, 'campaign_id');
     }
 }

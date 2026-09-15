@@ -6,7 +6,7 @@ use App\Enums\CampaignStatus;
 use App\Enums\ContactImportStatus;
 use App\Enums\ContactUploadMode;
 use App\Enums\ContactUploadRowStatus;
-use App\Models\Campaign;
+use App\Models\Campaigns\OnceOffCampaign;
 use App\Models\OnceOffCampaignContactImport;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -18,11 +18,11 @@ class SyncOnceOffCampaignContactImport
     public function __construct(private CampaignContactSyncPlan $plan) {}
 
     /** @param list<string>|null $rowIds */
-    public function handle(Campaign $campaign, OnceOffCampaignContactImport $contactImport, ?array $rowIds = null, ?string $fingerprint = null): void
+    public function handle(OnceOffCampaign $campaign, OnceOffCampaignContactImport $contactImport, ?array $rowIds = null, ?string $fingerprint = null): void
     {
         DB::transaction(function () use ($campaign, $contactImport, $rowIds, $fingerprint): void {
             // Every sync locks the campaign first, so overlapping uploads cannot create duplicates.
-            $campaign = Campaign::query()->whereKey($campaign->id)->lockForUpdate()->firstOrFail();
+            $campaign = OnceOffCampaign::query()->whereKey($campaign->id)->lockForUpdate()->firstOrFail();
             $upload = $campaign->contactImports()->whereKey($contactImport->id)->lockForUpdate()->firstOrFail();
             if ($campaign->status !== CampaignStatus::Draft) {
                 throw ValidationException::withMessages(['sync' => __('Contacts can only be synced while the campaign is draft.')]);
@@ -51,7 +51,7 @@ class SyncOnceOffCampaignContactImport
             if ($rows->isEmpty()) {
                 throw ValidationException::withMessages(['sync' => __('There are no remaining contacts to sync.')]);
             }
-            $existing = $campaign->onceOffContacts()->whereIn('normalized_number', $rows->pluck('normalized_number'))->orderBy('id')->get()->groupBy('normalized_number');
+            $existing = $campaign->contacts()->whereIn('normalized_number', $rows->pluck('normalized_number'))->orderBy('id')->get()->groupBy('normalized_number');
             $keepIds = [];
             foreach ($rows as $row) {
                 $values = $row->contactValues();
@@ -73,7 +73,7 @@ class SyncOnceOffCampaignContactImport
                 $contact = $matches->first();
                 $before = $contact?->only(['first_name', 'last_name', 'number', 'email']);
                 if ($contact === null) {
-                    $contact = $campaign->onceOffContacts()->create($values);
+                    $contact = $campaign->contacts()->create($values);
                     $existing->put($row->normalized_number, new Collection([$contact]));
                     $outcome = ContactUploadRowStatus::Added;
                 } elseif ($upload->mode === ContactUploadMode::Append) {
@@ -88,7 +88,7 @@ class SyncOnceOffCampaignContactImport
 
             if ($replace) {
                 // Soft deletion retains removed contacts and the upload responsible for removal.
-                $removed = $campaign->onceOffContacts()->whereNotIn('id', $keepIds)->update([
+                $removed = $campaign->contacts()->whereNotIn('id', $keepIds)->update([
                     'deleted_at' => now(), 'removed_by_import_id' => $upload->id, 'updated_at' => now(),
                 ]);
                 $upload->removed_count = $removed;

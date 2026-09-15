@@ -8,7 +8,6 @@ use App\Models\Concerns\HasPublicId;
 use Database\Factories\CampaignFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
@@ -27,6 +26,8 @@ class Campaign extends Model
 {
     /** @use HasFactory<CampaignFactory> */
     use HasFactory, HasPublicId;
+
+    protected $table = 'campaigns';
 
     /** @var list<string> */
     protected $fillable = [
@@ -52,29 +53,11 @@ class Campaign extends Model
         'status' => CampaignStatus::class,
     ];
 
-    /** @return HasMany<OnceOffCampaignContact, $this> */
-    public function onceOffContacts(): HasMany
-    {
-        return $this->hasMany(OnceOffCampaignContact::class);
-    }
-
-    /** @return HasMany<OnceOffCampaignContactImport, $this> */
-    public function contactImports(): HasMany
-    {
-        return $this->hasMany(OnceOffCampaignContactImport::class);
-    }
-
     /** @return HasOne<OnceOffCampaignSchedule, $this> */
     public function firstOnceOffSchedule(): HasOne
     {
-        return $this->hasOne(OnceOffCampaignSchedule::class)
+        return $this->hasOne(OnceOffCampaignSchedule::class, 'campaign_id')
             ->select(['id', 'campaign_id', 'scheduled_at'])
             ->where('attempt_count', 1);
-    }
-
-    /** @return HasMany<OnceOffCampaignSchedule, $this> */
-    public function onceOffSchedules(): HasMany
-    {
-        return $this->hasMany(OnceOffCampaignSchedule::class);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Campaign;
+use App\Models\Campaigns\OnceOffCampaign;
 use App\Support\ChangeOnceOffCampaignStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -10,7 +10,7 @@ use Inertia\Inertia;
 
 class OnceOffCampaignStatusController extends Controller
 {
-    public function launch(Campaign $campaign, ChangeOnceOffCampaignStatus $change): RedirectResponse
+    public function launch(OnceOffCampaign $campaign, ChangeOnceOffCampaignStatus $change): RedirectResponse
     {
         Gate::authorize('campaigns.view');
         Gate::authorize('campaigns.edit');
@@ -22,7 +22,7 @@ class OnceOffCampaignStatusController extends Controller
         return back();
     }
 
-    public function stop(Campaign $campaign, ChangeOnceOffCampaignStatus $change): RedirectResponse
+    public function stop(OnceOffCampaign $campaign, ChangeOnceOffCampaignStatus $change): RedirectResponse
     {
         Gate::authorize('campaigns.view');
         Gate::authorize('campaigns.edit');

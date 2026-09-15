@@ -3,6 +3,7 @@
 use App\Enums\CampaignType;
 use App\Enums\ContactUploadMode;
 use App\Models\Campaign;
+use App\Models\Campaigns\OnceOffCampaign;
 use App\Models\CommunicationProvider;
 use App\Models\OnceOffCampaignSchedule;
 use App\Models\Permission;
@@ -24,7 +25,7 @@ beforeEach(function () {
     $this->editor = User::factory()->create();
     $this->editor->givePermissionTo(['campaigns.view', 'campaigns.edit']);
     $this->actingAs($this->editor);
-    $this->campaign = Campaign::factory()->onceOff()->create();
+    $this->campaign = OnceOffCampaign::factory()->create();
 });
 
 function scheduleAttempt(array $overrides = []): array
@@ -32,9 +33,9 @@ function scheduleAttempt(array $overrides = []): array
     return ['scheduled_at' => '2030-01-15T09:30:00.000Z', 'channel' => array_key_first(CommunicationRegistry::channels()), ...$overrides];
 }
 
-function savedScheduleAttempt(Campaign $campaign, int $number = 1): OnceOffCampaignSchedule
+function savedScheduleAttempt(OnceOffCampaign $campaign, int $number = 1): OnceOffCampaignSchedule
 {
-    return $campaign->onceOffSchedules()->create([
+    return $campaign->schedules()->create([
         ...scheduleAttempt(['scheduled_at' => sprintf('2030-01-%02dT09:30:00.000Z', 14 + $number)]),
         'attempt_count' => $number,
     ]);
@@ -121,7 +122,7 @@ test('schedule channels use seeded database metadata without exposing provider s
 test('every seeded communication channel can be used without choosing a provider', function (string $channel) {
     $this->put(route('campaigns.once-off.schedule.update', $this->campaign), ['schedules' => [scheduleAttempt(['channel' => $channel])]])
         ->assertSessionHasNoErrors();
-    expect($this->campaign->onceOffSchedules()->sole()->channel)->toBe($channel);
+    expect($this->campaign->schedules()->sole()->channel)->toBe($channel);
 })->with(fn () => array_keys(CommunicationRegistry::channels()));
 
 test('schedule validation reads current database channels instead of hardcoded registry keys', function () {
@@ -131,7 +132,7 @@ test('schedule validation reads current database channels instead of hardcoded r
         ->assertUnprocessable()->assertJsonValidationErrors('schedules.0.channel');
     $this->put(route('campaigns.once-off.schedule.update', $this->campaign), ['schedules' => [scheduleAttempt(['channel' => 'database_channel'])]])
         ->assertSessionHasNoErrors();
-    expect($this->campaign->onceOffSchedules()->sole()->channel)->toBe('database_channel');
+    expect($this->campaign->schedules()->sole()->channel)->toBe('database_channel');
 });
 
 test('schedule routes reject other campaign types and unknown public identifiers', function (CampaignType $type) {
@@ -150,7 +151,7 @@ test('saving multiple attempts assigns contiguous counts and exposes UTC public 
     $attempts = [scheduleAttempt(), scheduleAttempt(['scheduled_at' => '2030-01-16T09:30:00.000Z']), scheduleAttempt(['scheduled_at' => '2030-01-17T09:30:00.000Z'])];
     $this->put(route('campaigns.once-off.schedule.update', $this->campaign), ['schedules' => $attempts])
         ->assertSessionHasNoErrors()->assertRedirect(route('campaigns.once-off.schedule.show', $this->campaign));
-    $saved = $this->campaign->onceOffSchedules()->orderBy('attempt_count')->get();
+    $saved = $this->campaign->schedules()->orderBy('attempt_count')->get();
     expect($saved->pluck('attempt_count')->all())->toBe([1, 2, 3])
         ->and($this->campaign->fresh()->getAttributes())->toBe($before);
     foreach ($saved as $index => $schedule) {
@@ -175,7 +176,7 @@ test('resaving unchanged attempts preserves public IDs and attempt numbers', fun
     for ($iteration = 0; $iteration < 2; $iteration++) {
         $this->put(route('campaigns.once-off.schedule.update', $this->campaign), $payload)->assertSessionHasNoErrors();
     }
-    expect($this->campaign->onceOffSchedules()->orderBy('attempt_count')->pluck('public_id')->all())
+    expect($this->campaign->schedules()->orderBy('attempt_count')->pluck('public_id')->all())
         ->toBe([$first->public_id, $second->public_id])
         ->and($first->fresh()->attempt_count)->toBe(1)->and($second->fresh()->attempt_count)->toBe(2);
 });
@@ -184,14 +185,14 @@ test('removing a middle follow-up and appending one retains IDs and renumbers at
     $first = savedScheduleAttempt($this->campaign);
     $removed = savedScheduleAttempt($this->campaign, 2);
     $third = savedScheduleAttempt($this->campaign, 3);
-    $other = savedScheduleAttempt(Campaign::factory()->onceOff()->create());
+    $other = savedScheduleAttempt(OnceOffCampaign::factory()->create());
     $otherBefore = $other->fresh()->getAttributes();
     $this->put(route('campaigns.once-off.schedule.update', $this->campaign), ['schedules' => [
         scheduleAttempt(['id' => $first->public_id, 'scheduled_at' => '2030-01-15T10:00:00.000Z']),
         scheduleAttempt(['id' => $third->public_id, 'scheduled_at' => '2030-01-17T09:30:00.000Z']),
         scheduleAttempt(['id' => null, 'scheduled_at' => '2030-01-18T09:30:00.000Z']),
     ]])->assertSessionHasNoErrors();
-    $saved = $this->campaign->onceOffSchedules()->orderBy('attempt_count')->get();
+    $saved = $this->campaign->schedules()->orderBy('attempt_count')->get();
     $this->assertModelMissing($removed);
     expect($saved->pluck('attempt_count')->all())->toBe([1, 2, 3])
         ->and($saved[0]->public_id)->toBe($first->public_id)
@@ -206,7 +207,7 @@ test('all follow-ups can be removed while retaining the required first attempt',
     savedScheduleAttempt($this->campaign, 2);
     $this->put(route('campaigns.once-off.schedule.update', $this->campaign), ['schedules' => [scheduleAttempt(['id' => $first->public_id])]])
         ->assertSessionHasNoErrors();
-    expect($this->campaign->onceOffSchedules()->sole()->public_id)->toBe($first->public_id);
+    expect($this->campaign->schedules()->sole()->public_id)->toBe($first->public_id);
 });
 
 test('invalid schedule structures and values leave existing attempts untouched', function (array $payload, string $field) {
@@ -240,19 +241,19 @@ test('every follow-up must be strictly later than its immediately preceding atte
         scheduleAttempt(['scheduled_at' => '2030-01-17T09:30:00.000Z']),
         scheduleAttempt(['scheduled_at' => $lastDate]),
     ]])->assertUnprocessable()->assertJsonValidationErrors('schedules.2.scheduled_at');
-    expect($this->campaign->onceOffSchedules()->sole()->public_id)->toBe($saved->public_id);
+    expect($this->campaign->schedules()->sole()->public_id)->toBe($saved->public_id);
 })->with(['same as previous' => '2030-01-17T09:30:00.000Z', 'after first but before previous' => '2030-01-16T09:30:00.000Z', 'before first' => '2030-01-14T09:30:00.000Z']);
 
 test('follow-up dates can be edited to less than the default twenty-four-hour gap', function () {
     $this->put(route('campaigns.once-off.schedule.update', $this->campaign), ['schedules' => [
         scheduleAttempt(), scheduleAttempt(['scheduled_at' => '2030-01-15T09:30:01.000Z']),
     ]])->assertSessionHasNoErrors();
-    expect($this->campaign->onceOffSchedules()->count())->toBe(2);
+    expect($this->campaign->schedules()->count())->toBe(2);
 });
 
 test('foreign missing numeric and duplicated schedule IDs are rejected without writes', function (string $kind) {
     $saved = savedScheduleAttempt($this->campaign);
-    $foreign = savedScheduleAttempt(Campaign::factory()->onceOff()->create());
+    $foreign = savedScheduleAttempt(OnceOffCampaign::factory()->create());
     $before = OnceOffCampaignSchedule::query()->orderBy('id')->get()->map->getAttributes()->all();
     $id = match ($kind) {
         'foreign' => $foreign->public_id,
@@ -270,7 +271,7 @@ test('foreign missing numeric and duplicated schedule IDs are rejected without w
 test('transaction failure restores deleted and edited attempts and their original numbers', function () {
     $first = savedScheduleAttempt($this->campaign);
     savedScheduleAttempt($this->campaign, 2);
-    $before = $this->campaign->onceOffSchedules()->orderBy('id')->get()->map->getAttributes()->all();
+    $before = $this->campaign->schedules()->orderBy('id')->get()->map->getAttributes()->all();
     $event = 'eloquent.creating: '.OnceOffCampaignSchedule::class;
     Event::listen($event, function () {
         throw new RuntimeException('Simulated schedule storage failure');
@@ -283,7 +284,7 @@ test('transaction failure restores deleted and edited attempts and their origina
     } finally {
         Event::forget($event);
     }
-    expect($this->campaign->onceOffSchedules()->orderBy('id')->get()->map->getAttributes()->all())->toBe($before);
+    expect($this->campaign->schedules()->orderBy('id')->get()->map->getAttributes()->all())->toBe($before);
 });
 
 test('save action rechecks stale IDs after request validation before removing any rows', function () {
@@ -345,5 +346,5 @@ test('save action refuses an empty schedule without deleting the first attempt',
     $saved = savedScheduleAttempt($this->campaign);
     expect(fn () => app(SaveOnceOffCampaignSchedules::class)->handle($this->campaign, []))
         ->toThrow(ValidationException::class);
-    expect($this->campaign->onceOffSchedules()->sole()->public_id)->toBe($saved->public_id);
+    expect($this->campaign->schedules()->sole()->public_id)->toBe($saved->public_id);
 });
