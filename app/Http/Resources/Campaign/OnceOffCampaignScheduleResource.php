@@ -14,7 +14,7 @@ class OnceOffCampaignScheduleResource extends JsonResource
     {
         return [
             'id' => $this->public_id,
-            'attempt_count' => $this->attempt_count,
+            'attempt_number' => $this->attempt_number,
             'scheduled_at' => $this->scheduled_at->toJSON(),
             'channel' => $this->channel,
         ];

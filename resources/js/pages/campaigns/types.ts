@@ -148,7 +148,7 @@ export type ContactSyncPlan = {
 
 export type OnceOffCampaignSchedule = {
     id: string;
-    attempt_count: number;
+    attempt_number: number;
     scheduled_at: string;
     channel: string;
 };

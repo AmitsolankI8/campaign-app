@@ -22,7 +22,7 @@ class OnceOffCampaignScheduleController extends Controller
         return Inertia::render('campaigns/once-off/Schedule', [
             'campaign' => $campaign->loadMissing('firstOnceOffSchedule')->toResource(CampaignResource::class)->resolve(),
             'schedules' => fn () => OnceOffCampaignScheduleResource::collection(
-                $campaign->schedules()->orderBy('attempt_count')->get(),
+                $campaign->schedules()->orderBy('attempt_number')->get(),
             )->resolve(),
             'channels' => fn () => CommunicationProvider::query()
                 ->select(['channel', 'channel_name', 'channel_position'])

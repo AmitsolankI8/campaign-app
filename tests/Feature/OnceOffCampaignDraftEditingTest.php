@@ -29,7 +29,7 @@ beforeEach(function () {
     $this->actingAs($this->editor);
     $this->campaign = OnceOffCampaign::factory()->create();
     $this->attempt = ['scheduled_at' => now()->addDay()->utc()->format('Y-m-d\TH:i:s.v\Z'), 'channel' => array_key_first(CommunicationRegistry::channels())];
-    $this->schedule = $this->campaign->schedules()->create(['attempt_count' => 1, ...$this->attempt]);
+    $this->schedule = $this->campaign->schedules()->create(['attempt_number' => 1, ...$this->attempt]);
     $this->contact = $this->campaign->contacts()->create(['first_name' => 'Existing', 'number' => '+14155550101']);
     $this->upload = app(StageCampaignContactUpload::class)->handle(
         $this->campaign, $this->editor, ContactUploadMode::Append,

@@ -26,7 +26,7 @@ beforeEach(function () {
     $this->actingAs($this->editor);
     $this->campaign = OnceOffCampaign::factory()->create();
     $this->schedule = $this->campaign->schedules()->create([
-        'attempt_count' => 1,
+        'attempt_number' => 1,
         'scheduled_at' => now()->addHour(),
         'channel' => array_key_first(CommunicationRegistry::channels()),
     ]);
@@ -114,10 +114,10 @@ test('staged uploads and other campaign contacts do not qualify for launch', fun
 });
 
 test('launch requires this campaigns first attempt', function () {
-    $this->schedule->update(['attempt_count' => 2]);
+    $this->schedule->update(['attempt_number' => 2]);
     $other = OnceOffCampaign::factory()->create();
     $other->schedules()->create([
-        'attempt_count' => 1, 'scheduled_at' => now()->addHour(),
+        'attempt_number' => 1, 'scheduled_at' => now()->addHour(),
         'channel' => array_key_first(CommunicationRegistry::channels()),
     ]);
     $this->postJson(route('campaigns.once-off.launch', $this->campaign))
@@ -128,7 +128,7 @@ test('launch requires this campaigns first attempt', function () {
 test('stop is rejected at and after the first schedule even with future follow ups', function (int $seconds) {
     $this->campaign->update(['status' => CampaignStatus::Launched]);
     $this->campaign->schedules()->create([
-        'attempt_count' => 2, 'scheduled_at' => now()->addDay(),
+        'attempt_number' => 2, 'scheduled_at' => now()->addDay(),
         'channel' => array_key_first(CommunicationRegistry::channels()),
     ]);
     $this->travelTo($this->schedule->scheduled_at->copy()->addSeconds($seconds));

@@ -347,7 +347,7 @@ function submit() {
                     class="space-y-3 rounded-lg border p-4"
                 >
                     <h3 class="text-sm font-semibold">
-                        {{ attemptLabel(schedule.attempt_count - 1) }}
+                        {{ attemptLabel(schedule.attempt_number - 1) }}
                     </h3>
                     <dl class="grid gap-4 text-sm md:grid-cols-2">
                         <div class="space-y-1">

@@ -57,7 +57,7 @@ test('once-off relationships use campaign ids and resolve their parent as a once
     $contact = $campaign->contacts()->create(['first_name' => 'Alice', 'number' => '+14155550101']);
     $upload = $campaign->contactImports()->create(['file_name' => 'Manual contact', 'contact_count' => 0, 'uploaded_by' => User::factory()->create()->id]);
     $schedule = $campaign->schedules()->create([
-        'attempt_count' => 1,
+        'attempt_number' => 1,
         'scheduled_at' => '2030-01-15T09:30:00.000Z',
         'channel' => array_key_first(CommunicationRegistry::channels()),
     ]);

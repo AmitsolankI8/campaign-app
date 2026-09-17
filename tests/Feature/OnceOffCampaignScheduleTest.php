@@ -37,7 +37,7 @@ function savedScheduleAttempt(OnceOffCampaign $campaign, int $number = 1): OnceO
 {
     return $campaign->schedules()->create([
         ...scheduleAttempt(['scheduled_at' => sprintf('2030-01-%02dT09:30:00.000Z', 14 + $number)]),
-        'attempt_count' => $number,
+        'attempt_number' => $number,
     ]);
 }
 
@@ -151,8 +151,8 @@ test('saving multiple attempts assigns contiguous counts and exposes UTC public 
     $attempts = [scheduleAttempt(), scheduleAttempt(['scheduled_at' => '2030-01-16T09:30:00.000Z']), scheduleAttempt(['scheduled_at' => '2030-01-17T09:30:00.000Z'])];
     $this->put(route('campaigns.once-off.schedule.update', $this->campaign), ['schedules' => $attempts])
         ->assertSessionHasNoErrors()->assertRedirect(route('campaigns.once-off.schedule.show', $this->campaign));
-    $saved = $this->campaign->schedules()->orderBy('attempt_count')->get();
-    expect($saved->pluck('attempt_count')->all())->toBe([1, 2, 3])
+    $saved = $this->campaign->schedules()->orderBy('attempt_number')->get();
+    expect($saved->pluck('attempt_number')->all())->toBe([1, 2, 3])
         ->and($this->campaign->fresh()->getAttributes())->toBe($before);
     foreach ($saved as $index => $schedule) {
         expect(Str::isUlid($schedule->public_id))->toBeTrue()
@@ -162,7 +162,7 @@ test('saving multiple attempts assigns contiguous counts and exposes UTC public 
         $page->where('campaign.scheduled_at', $saved[0]->scheduled_at->toJSON())->has('schedules', 3);
         foreach ($saved as $index => $schedule) {
             $page->where("schedules.{$index}", [
-                'id' => $schedule->public_id, 'attempt_count' => $index + 1,
+                'id' => $schedule->public_id, 'attempt_number' => $index + 1,
                 'scheduled_at' => $schedule->scheduled_at->toJSON(), 'channel' => $schedule->channel,
             ]);
         }
@@ -176,9 +176,9 @@ test('resaving unchanged attempts preserves public IDs and attempt numbers', fun
     for ($iteration = 0; $iteration < 2; $iteration++) {
         $this->put(route('campaigns.once-off.schedule.update', $this->campaign), $payload)->assertSessionHasNoErrors();
     }
-    expect($this->campaign->schedules()->orderBy('attempt_count')->pluck('public_id')->all())
+    expect($this->campaign->schedules()->orderBy('attempt_number')->pluck('public_id')->all())
         ->toBe([$first->public_id, $second->public_id])
-        ->and($first->fresh()->attempt_count)->toBe(1)->and($second->fresh()->attempt_count)->toBe(2);
+        ->and($first->fresh()->attempt_number)->toBe(1)->and($second->fresh()->attempt_number)->toBe(2);
 });
 
 test('removing a middle follow-up and appending one retains IDs and renumbers attempts', function () {
@@ -192,9 +192,9 @@ test('removing a middle follow-up and appending one retains IDs and renumbers at
         scheduleAttempt(['id' => $third->public_id, 'scheduled_at' => '2030-01-17T09:30:00.000Z']),
         scheduleAttempt(['id' => null, 'scheduled_at' => '2030-01-18T09:30:00.000Z']),
     ]])->assertSessionHasNoErrors();
-    $saved = $this->campaign->schedules()->orderBy('attempt_count')->get();
+    $saved = $this->campaign->schedules()->orderBy('attempt_number')->get();
     $this->assertModelMissing($removed);
-    expect($saved->pluck('attempt_count')->all())->toBe([1, 2, 3])
+    expect($saved->pluck('attempt_number')->all())->toBe([1, 2, 3])
         ->and($saved[0]->public_id)->toBe($first->public_id)
         ->and($saved[1]->public_id)->toBe($third->public_id)
         ->and($saved[2]->public_id)->not->toBeIn([$first->public_id, $removed->public_id, $third->public_id])
@@ -230,7 +230,7 @@ test('invalid schedule structures and values leave existing attempts untouched',
     'non UTC input' => [['schedules' => [scheduleAttempt(['scheduled_at' => '2030-01-15T15:00:00.000+05:30'])]], 'schedules.0.scheduled_at'],
     'blank follow-up date' => [['schedules' => [scheduleAttempt(), scheduleAttempt(['scheduled_at' => ''])]], 'schedules.1.scheduled_at'],
     'blank follow-up channel' => [['schedules' => [scheduleAttempt(), scheduleAttempt(['channel' => '', 'scheduled_at' => '2030-01-16T09:30:00.000Z'])]], 'schedules.1.channel'],
-    'client attempt number' => [['schedules' => [scheduleAttempt(['attempt_count' => 99])]], 'schedules.0'],
+    'client attempt number' => [['schedules' => [scheduleAttempt(['attempt_number' => 99])]], 'schedules.0'],
     'client campaign ID' => [['schedules' => [scheduleAttempt(['campaign_id' => 99])]], 'schedules.0'],
 ]);
 

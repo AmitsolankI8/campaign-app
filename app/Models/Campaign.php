@@ -58,6 +58,6 @@ class Campaign extends Model
     {
         return $this->hasOne(OnceOffCampaignSchedule::class, 'campaign_id')
             ->select(['id', 'campaign_id', 'scheduled_at'])
-            ->where('attempt_count', 1);
+            ->where('attempt_number', 1);
     }
 }

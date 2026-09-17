@@ -35,8 +35,8 @@ class SaveOnceOffCampaignSchedules
             $campaign->schedules()->whereNotIn('public_id', $retainedIds)->delete();
 
             // Free occupied numbers so remaining attempts can be renumbered after removals.
-            $offset = (int) $existing->max('attempt_count') + count($attempts);
-            $campaign->schedules()->increment('attempt_count', $offset);
+            $offset = (int) $existing->max('attempt_number') + count($attempts);
+            $campaign->schedules()->increment('attempt_number', $offset);
 
             foreach ($attempts as $index => $attempt) {
                 $schedule = isset($attempt['id'])
@@ -44,12 +44,12 @@ class SaveOnceOffCampaignSchedules
                     : $campaign->schedules()->make();
 
                 if ($schedule->exists) {
-                    $schedule->attempt_count += $offset;
-                    $schedule->syncOriginalAttribute('attempt_count');
+                    $schedule->attempt_number += $offset;
+                    $schedule->syncOriginalAttribute('attempt_number');
                 }
 
                 $schedule->fill([
-                    'attempt_count' => $index + 1,
+                    'attempt_number' => $index + 1,
                     'scheduled_at' => Carbon::parse($attempt['scheduled_at'])->utc(),
                     'channel' => $attempt['channel'],
                 ]);

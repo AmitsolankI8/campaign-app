@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->ulid('public_id')->unique();
             $table->foreignId('campaign_id')->constrained()->cascadeOnDelete();
-            $table->unsignedInteger('attempt_count');
+            $table->unsignedInteger('attempt_number');
             $table->dateTime('scheduled_at');
             $table->string('channel');
             $table->timestamps();
-            $table->unique(['campaign_id', 'attempt_count'], 'campaign_schedule_attempt_unique');
+            $table->unique(['campaign_id', 'attempt_number'], 'campaign_schedule_attempt_unique');
             $table->index('scheduled_at');
         });
     }
