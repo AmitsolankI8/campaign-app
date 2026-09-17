@@ -6,7 +6,7 @@ use App\Http\Requests\Campaign\UpdateOnceOffCampaignScheduleRequest;
 use App\Http\Resources\Campaign\CampaignResource;
 use App\Http\Resources\Campaign\OnceOffCampaignScheduleResource;
 use App\Models\Campaigns\OnceOffCampaign;
-use App\Models\CommunicationProvider;
+use App\Models\CommunicationChannel;
 use App\Support\SaveOnceOffCampaignSchedules;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -22,14 +22,13 @@ class OnceOffCampaignScheduleController extends Controller
         return Inertia::render('campaigns/once-off/Schedule', [
             'campaign' => $campaign->loadMissing('firstOnceOffSchedule')->toResource(CampaignResource::class)->resolve(),
             'schedules' => fn () => OnceOffCampaignScheduleResource::collection(
-                $campaign->schedules()->orderBy('attempt_number')->get(),
+                $campaign->schedules()->with('channel')->orderBy('attempt_number')->get(),
             )->resolve(),
-            'channels' => fn () => CommunicationProvider::query()
-                ->select(['channel', 'channel_name', 'channel_position'])
-                ->orderBy('channel_position')->orderBy('channel')
-                ->get()->unique('channel')->map(fn (CommunicationProvider $provider) => [
-                    'value' => $provider->channel,
-                    'label' => $provider->channel_name,
+            'channels' => fn () => CommunicationChannel::query()
+                ->where('is_active', true)->orderBy('position')->orderBy('code')
+                ->get()->map(fn (CommunicationChannel $channel) => [
+                    'value' => $channel->code,
+                    'label' => $channel->name,
                 ])->values()->all(),
         ]);
     }

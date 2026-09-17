@@ -12,15 +12,15 @@ class CommunicationProviderResource extends JsonResource
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        $credentials = $this->credentials ?? [];
+        $credentials = $this->defaultAccount->credentials ?? [];
         $fields = $this->fields ?? [];
 
         return [
             'id' => $this->public_id,
-            'provider' => $this->provider,
+            'provider' => $this->code,
             'name' => $this->name,
-            'is_active' => $this->is_active,
-            'priority' => $this->priority,
+            'is_active' => $this->defaultAccount->is_active ?? false,
+            'priority' => $this->defaultAccount->priority ?? 1,
             'fields' => collect($fields)->map(fn (array $field) => collect($field)->except('rules')->all())->all(),
             'credentials' => collect($fields)->mapWithKeys(fn (array $field) => [
                 $field['key'] => $field['secret'] ? '' : ($credentials[$field['key']] ?? ''),

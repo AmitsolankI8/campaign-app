@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Enums\CampaignStatus;
 use App\Models\Campaigns\OnceOffCampaign;
+use App\Models\CommunicationChannel;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -51,7 +52,8 @@ class SaveOnceOffCampaignSchedules
                 $schedule->fill([
                     'attempt_number' => $index + 1,
                     'scheduled_at' => Carbon::parse($attempt['scheduled_at'])->utc(),
-                    'channel' => $attempt['channel'],
+                    'channel_id' => CommunicationChannel::query()->where('code', $attempt['channel'])->where('is_active', true)->firstOrFail()->id,
+                    'timezone' => UserPreferences::forUser(auth()->user())['timezone']['identifier'] ?? 'UTC',
                 ]);
                 $schedule->save();
             }

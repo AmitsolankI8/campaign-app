@@ -13,8 +13,9 @@ class UpdateCommunicationProviderRequest extends FormRequest
     public function communicationProvider(): CommunicationProvider
     {
         return $this->providerRecord ??= CommunicationProvider::query()
-            ->where('channel', (string) $this->route('channel'))
-            ->where('provider', (string) $this->route('provider'))
+            ->with('defaultAccount')
+            ->whereHas('channel', fn ($query) => $query->where('code', (string) $this->route('channel')))
+            ->where('code', (string) $this->route('provider'))
             ->firstOrFail();
     }
 
@@ -47,7 +48,7 @@ class UpdateCommunicationProviderRequest extends FormRequest
             if ($validator->errors()->isNotEmpty() || ! $this->boolean('is_active')) {
                 return;
             }
-            $saved = $this->communicationProvider()->credentials ?? [];
+            $saved = $this->communicationProvider()->defaultAccount->credentials ?? [];
             foreach ($this->communicationProvider()->fields as $field) {
                 $value = $this->input('credentials.'.$field['key']);
                 if ($field['secret'] && blank($value)) {

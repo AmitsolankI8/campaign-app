@@ -1,3 +1,5 @@
+import type { CommunicationWorkStatus } from '@/types/communication';
+
 export const CAMPAIGN_TYPE_KEY = {
     onceOff: 'once_off',
     ongoing: 'ongoing',
@@ -25,6 +27,7 @@ export const CAMPAIGN_STATUS_KEY = {
     running: 'running',
     paused: 'paused',
     cancelled: 'cancelled',
+    completed: 'completed',
 } as const;
 
 export type CampaignStatusKey =
@@ -151,6 +154,8 @@ export type OnceOffCampaignSchedule = {
     attempt_number: number;
     scheduled_at: string;
     channel: string;
+    timezone: string;
+    status: CommunicationWorkStatus;
 };
 
 export type CampaignScheduleChannel = {

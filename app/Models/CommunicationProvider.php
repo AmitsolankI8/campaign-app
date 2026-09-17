@@ -4,32 +4,52 @@ namespace App\Models;
 
 use App\Models\Concerns\HasPublicId;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property string $public_id
- * @property string $channel
- * @property string $provider
+ * @property int $id
+ * @property int $channel_id
+ * @property string $code
  * @property string $name
- * @property string $channel_name
- * @property int $channel_position
  * @property int $position
  * @property list<array{key: string, label: string, type: string, secret: bool, required: bool, rules: list<string>, options?: list<array{value: string, label: string}>}> $fields
  * @property bool $is_active
- * @property int $priority
- * @property array<string, string|null> $credentials
+ * @property-read CommunicationChannel $channel
+ * @property-read CommunicationProviderAccount|null $defaultAccount
  */
 class CommunicationProvider extends Model
 {
     use HasPublicId;
 
-    protected $fillable = ['channel', 'provider', 'name', 'channel_name', 'channel_position', 'position', 'fields', 'is_active', 'priority', 'credentials'];
+    protected $fillable = ['channel_id', 'code', 'name', 'position', 'fields', 'is_active'];
 
-    protected $hidden = ['credentials'];
+    protected $hidden = ['id'];
 
-    protected $attributes = ['is_active' => false, 'priority' => 1, 'channel_position' => 0, 'position' => 0];
+    protected $attributes = ['is_active' => true, 'position' => 0];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean', 'priority' => 'integer', 'credentials' => 'encrypted:array', 'fields' => 'array', 'channel_position' => 'integer', 'position' => 'integer'];
+        return ['is_active' => 'boolean', 'fields' => 'array', 'position' => 'integer'];
+    }
+
+    /** @return BelongsTo<CommunicationChannel, $this> */
+    public function channel(): BelongsTo
+    {
+        return $this->belongsTo(CommunicationChannel::class, 'channel_id');
+    }
+
+    /** @return HasMany<CommunicationProviderAccount, $this> */
+    public function accounts(): HasMany
+    {
+        return $this->hasMany(CommunicationProviderAccount::class, 'provider_id');
+    }
+
+    /** @return HasOne<CommunicationProviderAccount, $this> */
+    public function defaultAccount(): HasOne
+    {
+        return $this->hasOne(CommunicationProviderAccount::class, 'provider_id')->where('key', 'default');
     }
 }

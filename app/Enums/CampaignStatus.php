@@ -9,6 +9,7 @@ enum CampaignStatus: int
     case Running = 3;
     case Paused = 4;
     case Cancelled = 5;
+    case Completed = 6;
 
     public const DEFAULT = self::Draft->value;
 
@@ -20,6 +21,7 @@ enum CampaignStatus: int
             self::Running => 'running',
             self::Paused => 'paused',
             self::Cancelled => 'cancelled',
+            self::Completed => 'completed',
         };
     }
 
@@ -31,6 +33,7 @@ enum CampaignStatus: int
             self::Running => __('Running'),
             self::Paused => __('Paused'),
             self::Cancelled => __('Cancelled'),
+            self::Completed => __('Completed'),
         };
     }
 

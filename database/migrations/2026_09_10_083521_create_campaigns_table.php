@@ -17,7 +17,8 @@ return new class extends Migration
             $table->ulid('public_id')->unique();
             $table->string('name');
             $table->unsignedTinyInteger('campaign_type')->comment('1 - once_off, 2 - ongoing, 3 - batch_processing')->index();
-            $table->unsignedTinyInteger('status')->default(CampaignStatus::DEFAULT)->comment('1 - draft, 2 - launched, 3 - running, 4 - paused, 5 - cancelled')->index();
+            $table->unsignedTinyInteger('status')->default(CampaignStatus::DEFAULT)->comment('1 - draft, 2 - launched, 3 - running, 4 - paused, 5 - cancelled, 6 - completed')->index();
+            $table->unsignedInteger('execution_version')->default(0);
             $table->string('short_note')->nullable();
             $table->timestamps();
         });

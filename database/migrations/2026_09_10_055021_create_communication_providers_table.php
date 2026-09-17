@@ -14,19 +14,14 @@ return new class extends Migration
         Schema::create('communication_providers', function (Blueprint $table) {
             $table->id();
             $table->ulid('public_id')->unique();
-            $table->string('channel');
-            $table->string('channel_name')->nullable();
-            $table->unsignedInteger('channel_position')->default(0);
-            $table->string('provider');
+            $table->foreignId('channel_id')->constrained('communication_channels')->restrictOnDelete();
+            $table->string('code');
             $table->string('name')->nullable();
             $table->unsignedInteger('position')->default(0);
-            $table->boolean('is_active')->default(false);
-            $table->unsignedInteger('priority')->default(1);
-            $table->text('credentials')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->json('fields')->nullable();
             $table->timestamps();
-            $table->unique(['channel', 'provider']);
-            $table->index(['channel', 'is_active', 'priority']);
+            $table->unique(['channel_id', 'code']);
         });
     }
 

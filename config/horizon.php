@@ -98,6 +98,9 @@ return [
 
     'waits' => [
         'redis:default' => 60,
+        'redis:campaigns' => 60,
+        'redis:communications' => 60,
+        'redis:webhooks' => 30,
     ],
 
     /*
@@ -197,6 +200,49 @@ return [
     */
 
     'defaults' => [
+        'campaigns' => [
+            'connection' => 'redis',
+            'queue' => ['campaigns'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'minProcesses' => 1,
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 128,
+            'tries' => 3,
+            'timeout' => 75,
+            'nice' => 0,
+        ],
+        'communications' => [
+            'connection' => 'redis',
+            'queue' => ['communications'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'minProcesses' => 1,
+            'maxProcesses' => 4,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 128,
+            'tries' => 3,
+            'timeout' => 75,
+            'nice' => 0,
+        ],
+        'webhooks' => [
+            'connection' => 'redis',
+            'queue' => ['webhooks'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'minProcesses' => 1,
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 128,
+            'tries' => 3,
+            'timeout' => 75,
+            'nice' => 0,
+        ],
+
         'supervisor-1' => [
             'connection' => 'redis',
             'queue' => ['default'],
@@ -214,6 +260,9 @@ return [
 
     'environments' => [
         'production' => [
+            'campaigns' => ['maxProcesses' => 2],
+            'communications' => ['maxProcesses' => 10],
+            'webhooks' => ['maxProcesses' => 2],
             'supervisor-1' => [
                 'maxProcesses' => 10,
                 'balanceMaxShift' => 1,
@@ -222,6 +271,9 @@ return [
         ],
 
         'local' => [
+            'campaigns' => ['maxProcesses' => 1],
+            'communications' => ['maxProcesses' => 2],
+            'webhooks' => ['maxProcesses' => 1],
             'supervisor-1' => [
                 'maxProcesses' => 3,
             ],

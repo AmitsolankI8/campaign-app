@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property int $execution_version
  * @property int $id
  * @property string $public_id
  * @property string $name
@@ -40,6 +41,7 @@ class Campaign extends Model
     /** @var array<string, mixed> */
     protected $attributes = [
         'status' => CampaignStatus::DEFAULT,
+        'execution_version' => 0,
     ];
 
     /** @var list<string> */
@@ -51,6 +53,7 @@ class Campaign extends Model
     protected $casts = [
         'campaign_type' => CampaignType::class,
         'status' => CampaignStatus::class,
+        'execution_version' => 'integer',
     ];
 
     /** @return HasOne<OnceOffCampaignSchedule, $this> */

@@ -21,6 +21,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->group(function () {
             Route::get('once-off', [OnceOffCampaignController::class, 'show'])->name('once-off.show');
             Route::post('once-off/launch', [OnceOffCampaignStatusController::class, 'launch'])->name('once-off.launch');
+            Route::post('once-off/pause', [OnceOffCampaignStatusController::class, 'pause'])->name('once-off.pause');
+            Route::post('once-off/resume', [OnceOffCampaignStatusController::class, 'resume'])->name('once-off.resume');
+            Route::post('once-off/cancel', [OnceOffCampaignStatusController::class, 'cancel'])->name('once-off.cancel');
             Route::post('once-off/stop', [OnceOffCampaignStatusController::class, 'stop'])->name('once-off.stop');
             Route::get('once-off/contacts', [OnceOffCampaignContactController::class, 'index'])->name('once-off.contacts.index');
             Route::get('once-off/contact-imports', [OnceOffCampaignContactImportController::class, 'index'])->name('once-off.contact-imports.index');

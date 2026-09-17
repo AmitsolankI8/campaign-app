@@ -16,7 +16,9 @@ class OnceOffCampaignScheduleResource extends JsonResource
             'id' => $this->public_id,
             'attempt_number' => $this->attempt_number,
             'scheduled_at' => $this->scheduled_at->toJSON(),
-            'channel' => $this->channel,
+            'channel' => $this->channel->code,
+            'status' => $this->status->toArray(),
+            'timezone' => $this->timezone,
         ];
     }
 }

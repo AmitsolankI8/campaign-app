@@ -3,7 +3,7 @@
 namespace App\Http\Requests\Campaign;
 
 use App\Models\Campaigns\OnceOffCampaign;
-use App\Models\CommunicationProvider;
+use App\Models\CommunicationChannel;
 use App\Models\OnceOffCampaignSchedule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
@@ -29,7 +29,7 @@ class UpdateOnceOffCampaignScheduleRequest extends FormRequest
             'schedules.*' => ['required', 'array:id,scheduled_at,channel'],
             'schedules.*.id' => ['nullable', 'ulid', 'distinct', Rule::exists(OnceOffCampaignSchedule::class, 'public_id')->where('campaign_id', $campaign->id)],
             'schedules.*.scheduled_at' => ['required', 'date_format:Y-m-d\TH:i:s.v\Z'],
-            'schedules.*.channel' => ['required', 'string', Rule::exists(CommunicationProvider::class, 'channel')],
+            'schedules.*.channel' => ['required', 'string', Rule::exists(CommunicationChannel::class, 'code')->where('is_active', true)],
         ];
     }
 

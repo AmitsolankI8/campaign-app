@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\UpdateCommunicationProviderRequest;
 use App\Http\Resources\CommunicationProviderResource;
-use App\Models\CommunicationProvider;
+use App\Models\CommunicationChannel;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,14 +17,15 @@ class CommunicationSettingsController extends Controller
     public function index(): Response
     {
         Gate::authorize('communication.view');
-        $providersByChannel = CommunicationProvider::query()
-            ->orderBy('channel_position')->orderBy('priority')->orderBy('position')->orderBy('id')
-            ->get()->groupBy('channel');
         $channels = [];
-        foreach ($providersByChannel as $channel => $providers) {
+        foreach (CommunicationChannel::query()->with('providers.defaultAccount')->orderBy('position')->get() as $channel) {
+            $providers = $channel->providers->sortBy([
+                fn ($a, $b) => ($a->defaultAccount->priority ?? 999) <=> ($b->defaultAccount->priority ?? 999),
+                ['position', 'asc'], ['id', 'asc'],
+            ])->values();
             $channels[] = [
-                'key' => $channel,
-                'name' => $providers->first()->channel_name,
+                'key' => $channel->code,
+                'name' => $channel->name,
                 'providers' => CommunicationProviderResource::collection($providers)->resolve(),
             ];
         }
@@ -35,13 +37,16 @@ class CommunicationSettingsController extends Controller
     {
         $model = $request->communicationProvider();
         $data = $request->validated();
-        $credentials = $data['credentials'];
-        foreach ($model->fields as $field) {
-            if ($field['secret'] && blank($credentials[$field['key']] ?? null)) {
-                $credentials[$field['key']] = $model->credentials[$field['key']] ?? null;
+        DB::transaction(function () use ($model, $data): void {
+            $account = $model->defaultAccount()->lockForUpdate()->firstOrFail();
+            $credentials = $data['credentials'];
+            foreach ($model->fields as $field) {
+                if ($field['secret'] && blank($credentials[$field['key']] ?? null)) {
+                    $credentials[$field['key']] = $account->credentials[$field['key']] ?? null;
+                }
             }
-        }
-        $model->fill([...$data, 'credentials' => $credentials])->save();
+            $account->fill([...$data, 'credentials' => $credentials])->save();
+        });
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Communication provider updated.')]);
 
         return to_route('communication.index');

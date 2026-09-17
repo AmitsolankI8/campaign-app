@@ -22,6 +22,36 @@ class OnceOffCampaignStatusController extends Controller
         return back();
     }
 
+    public function pause(OnceOffCampaign $campaign, ChangeOnceOffCampaignStatus $change): RedirectResponse
+    {
+        Gate::authorize('campaigns.view');
+        Gate::authorize('campaigns.edit');
+        $change->pause($campaign);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Campaign paused.')]);
+
+        return back();
+    }
+
+    public function resume(OnceOffCampaign $campaign, ChangeOnceOffCampaignStatus $change): RedirectResponse
+    {
+        Gate::authorize('campaigns.view');
+        Gate::authorize('campaigns.edit');
+        $change->resume($campaign);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Campaign resumed.')]);
+
+        return back();
+    }
+
+    public function cancel(OnceOffCampaign $campaign, ChangeOnceOffCampaignStatus $change): RedirectResponse
+    {
+        Gate::authorize('campaigns.view');
+        Gate::authorize('campaigns.edit');
+        $change->cancel($campaign);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Campaign cancelled.')]);
+
+        return back();
+    }
+
     public function stop(OnceOffCampaign $campaign, ChangeOnceOffCampaignStatus $change): RedirectResponse
     {
         Gate::authorize('campaigns.view');

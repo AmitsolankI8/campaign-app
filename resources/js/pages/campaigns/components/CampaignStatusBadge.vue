@@ -14,6 +14,8 @@ const statusClasses: Record<CampaignStatusKey, string> = {
         'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
     [CAMPAIGN_STATUS_KEY.paused]:
         'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300',
+    [CAMPAIGN_STATUS_KEY.completed]:
+        'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-800 dark:bg-teal-950 dark:text-teal-300',
     [CAMPAIGN_STATUS_KEY.cancelled]:
         'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300',
 };

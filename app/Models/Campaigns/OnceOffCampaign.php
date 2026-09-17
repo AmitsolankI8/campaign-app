@@ -36,6 +36,7 @@ class OnceOffCampaign extends Campaign
     protected $attributes = [
         'campaign_type' => CampaignType::OnceOff->value,
         'status' => CampaignStatus::DEFAULT,
+        'execution_version' => 0,
     ];
 
     protected static function booted(): void
