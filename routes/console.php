@@ -11,6 +11,8 @@ Artisan::command('communications:recover', function (RecoverCommunicationWork $r
 
 Schedule::command('communications:recover')->everyMinute()->withoutOverlapping();
 
+Schedule::command('telescope:prune')->daily()->withoutOverlapping();
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
