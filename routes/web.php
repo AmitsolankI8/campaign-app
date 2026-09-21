@@ -16,38 +16,40 @@ Route::inertia('/', 'Welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
-    Route::prefix('campaigns/{campaign}')
-        ->name('campaigns.')
-        ->group(function () {
-            Route::get('once-off', [OnceOffCampaignController::class, 'show'])->name('once-off.show');
-            Route::post('once-off/launch', [OnceOffCampaignStatusController::class, 'launch'])->name('once-off.launch');
-            Route::post('once-off/pause', [OnceOffCampaignStatusController::class, 'pause'])->name('once-off.pause');
-            Route::post('once-off/resume', [OnceOffCampaignStatusController::class, 'resume'])->name('once-off.resume');
-            Route::post('once-off/cancel', [OnceOffCampaignStatusController::class, 'cancel'])->name('once-off.cancel');
-            Route::post('once-off/stop', [OnceOffCampaignStatusController::class, 'stop'])->name('once-off.stop');
-            Route::get('once-off/contacts', [OnceOffCampaignContactController::class, 'index'])->name('once-off.contacts.index');
-            Route::get('once-off/contact-imports', [OnceOffCampaignContactImportController::class, 'index'])->name('once-off.contact-imports.index');
-            Route::get('once-off/schedule', [OnceOffCampaignScheduleController::class, 'show'])->name('once-off.schedule.show');
-            Route::put('once-off/schedule', [OnceOffCampaignScheduleController::class, 'update'])->name('once-off.schedule.update');
-            Route::post('once-off/contacts', [OnceOffCampaignContactController::class, 'store'])->name('once-off.contacts.store');
-            Route::post('once-off/contact-imports', [OnceOffCampaignContactImportController::class, 'store'])->name('once-off.contact-imports.store');
-            Route::post('once-off/contact-imports/preview', [OnceOffCampaignContactImportController::class, 'preview'])->name('once-off.contact-imports.preview');
-            Route::get('once-off/contact-imports/{contactImport}', [OnceOffCampaignContactImportController::class, 'show'])->scopeBindings()->name('once-off.contact-imports.show');
-            Route::get('once-off/contact-imports/{contactImport}/download', [OnceOffCampaignContactImportController::class, 'download'])->scopeBindings()->name('once-off.contact-imports.download');
-            Route::post('once-off/contact-imports/{contactImport}/sync', [OnceOffCampaignContactImportController::class, 'sync'])
-                ->scopeBindings()
-                ->name('once-off.contact-imports.sync');
-            Route::get('ongoing', [OngoingCampaignController::class, 'show'])->name('ongoing.show');
-            Route::get('batch-processing', [BatchProcessingCampaignController::class, 'show'])->name('batch-processing.show');
-        });
+
     Route::resource('campaigns', CampaignController::class)->except('destroy');
 
-    Route::prefix('user-management')
-        ->name('user-management.')
-        ->group(function () {
-            Route::resource('users', UserController::class)->except('show');
-            Route::resource('roles', RoleController::class)->except('show');
-        });
+    Route::prefix('campaigns/{campaign}/once-off')->name('campaigns.once-off.')->group(function () {
+        Route::get('/', [OnceOffCampaignController::class, 'show'])->name('show');
+        Route::post('launch', [OnceOffCampaignStatusController::class, 'launch'])->name('launch');
+        Route::post('pause', [OnceOffCampaignStatusController::class, 'pause'])->name('pause');
+        Route::post('resume', [OnceOffCampaignStatusController::class, 'resume'])->name('resume');
+        Route::post('cancel', [OnceOffCampaignStatusController::class, 'cancel'])->name('cancel');
+        Route::post('stop', [OnceOffCampaignStatusController::class, 'stop'])->name('stop');
+        Route::get('contacts', [OnceOffCampaignContactController::class, 'index'])->name('contacts.index');
+        Route::get('contact-imports', [OnceOffCampaignContactImportController::class, 'index'])->name('contact-imports.index');
+        Route::get('schedule', [OnceOffCampaignScheduleController::class, 'show'])->name('schedule.show');
+        Route::put('schedule', [OnceOffCampaignScheduleController::class, 'update'])->name('schedule.update');
+        Route::post('contacts', [OnceOffCampaignContactController::class, 'store'])->name('contacts.store');
+        Route::post('contact-imports', [OnceOffCampaignContactImportController::class, 'store'])->name('contact-imports.store');
+        Route::post('contact-imports/preview', [OnceOffCampaignContactImportController::class, 'preview'])->name('contact-imports.preview');
+        Route::get('contact-imports/{contactImport}', [OnceOffCampaignContactImportController::class, 'show'])->scopeBindings()->name('contact-imports.show');
+        Route::get('contact-imports/{contactImport}/download', [OnceOffCampaignContactImportController::class, 'download'])->scopeBindings()->name('contact-imports.download');
+        Route::post('contact-imports/{contactImport}/sync', [OnceOffCampaignContactImportController::class, 'sync'])->scopeBindings()->name('contact-imports.sync');
+    });
+
+    Route::prefix('campaigns/{campaign}/ongoing')->name('campaigns.ongoing.')->group(function () {
+        Route::get('/', [OngoingCampaignController::class, 'show'])->name('show');
+    });
+
+    Route::prefix('campaigns/{campaign}/batch-processing')->name('campaigns.batch-processing.')->group(function () {
+        Route::get('/', [BatchProcessingCampaignController::class, 'show'])->name('show');
+    });
+
+    Route::prefix('user-management')->name('user-management.')->group(function () {
+        Route::resource('users', UserController::class)->except('show');
+        Route::resource('roles', RoleController::class)->except('show');
+    });
 });
 
 require __DIR__.'/settings.php';
