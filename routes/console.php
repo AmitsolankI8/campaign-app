@@ -10,7 +10,6 @@ Artisan::command('communications:recover', function (RecoverCommunicationWork $r
 })->purpose('Republish overdue communication work and reconcile expired claims');
 
 Schedule::command('communications:recover')->everyMinute()->withoutOverlapping();
-Schedule::command('horizon:snapshot')->everyFiveMinutes();
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
