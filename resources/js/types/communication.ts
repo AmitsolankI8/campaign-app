@@ -13,6 +13,23 @@ export type CommunicationWorkStatus = {
     label: string;
 };
 
+export const COMMUNICATION_STATUS_KEY = {
+    pending: 'pending',
+    processing: 'processing',
+    accepted: 'accepted',
+    sent: 'sent',
+    delivered: 'delivered',
+    failed: 'failed',
+    cancelled: 'cancelled',
+    unknown: 'unknown',
+} as const;
+
+export type CommunicationStatus = {
+    value: number;
+    key: (typeof COMMUNICATION_STATUS_KEY)[keyof typeof COMMUNICATION_STATUS_KEY];
+    label: string;
+};
+
 export type CommunicationProvider = {
     id: string | null;
     provider: string;

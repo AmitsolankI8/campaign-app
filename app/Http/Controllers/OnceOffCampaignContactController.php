@@ -6,10 +6,13 @@ use App\Enums\ContactUploadMode;
 use App\Http\Requests\Campaign\IndexOnceOffCampaignContactRequest;
 use App\Http\Requests\Campaign\StoreOnceOffCampaignContactRequest;
 use App\Http\Resources\Campaign\CampaignResource;
+use App\Http\Resources\Campaign\OnceOffCampaignContactDetailsResource;
 use App\Http\Resources\Campaign\OnceOffCampaignContactResource;
 use App\Models\Campaigns\OnceOffCampaign;
+use App\Models\OnceOffCampaignContact;
 use App\Support\DataTable;
 use App\Support\StageCampaignContactUpload;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -44,5 +47,30 @@ class OnceOffCampaignContactController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Contact staged. Review and sync it when ready.')]);
 
         return to_route('campaigns.once-off.contact-imports.show', ['campaign' => $campaign, 'contactImport' => $upload]);
+    }
+
+    public function show(Request $request, OnceOffCampaign $campaign, OnceOffCampaignContact $contact): JsonResponse
+    {
+        Gate::authorize('campaigns.view');
+        abort_unless($contact->campaign_id === $campaign->id, 404);
+
+        $contact->load([
+            'campaign.schedules' => fn ($query) => $query
+                ->with('channel')
+                ->orderBy('attempt_number'),
+            'communications' => fn ($query) => $query
+                ->where('campaign_id', $campaign->id)
+                ->with([
+                    'scheduledCommunication',
+                    'channel',
+                    'attempts' => fn ($query) => $query
+                        ->select(['id', 'public_id', 'communication_id', 'provider_account_id', 'attempt_number', 'status', 'retryable', 'error_code', 'started_at', 'completed_at'])
+                        ->with(['providerAccount:id,provider_id', 'providerAccount.provider:id,name']),
+                ]),
+        ]);
+
+        return response()->json(
+            $contact->toResource(OnceOffCampaignContactDetailsResource::class)->resolve($request),
+        );
     }
 }

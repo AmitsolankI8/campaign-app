@@ -27,6 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('cancel', [OnceOffCampaignStatusController::class, 'cancel'])->name('cancel');
         Route::post('stop', [OnceOffCampaignStatusController::class, 'stop'])->name('stop');
         Route::get('contacts', [OnceOffCampaignContactController::class, 'index'])->name('contacts.index');
+        Route::get('contacts/{contact}', [OnceOffCampaignContactController::class, 'show'])->scopeBindings()->name('contacts.show');
         Route::get('contact-imports', [OnceOffCampaignContactImportController::class, 'index'])->name('contact-imports.index');
         Route::get('schedule', [OnceOffCampaignScheduleController::class, 'show'])->name('schedule.show');
         Route::put('schedule', [OnceOffCampaignScheduleController::class, 'update'])->name('schedule.update');

@@ -4,8 +4,10 @@ namespace App\Models;
 
 use App\Models\Campaigns\OnceOffCampaign;
 use App\Models\Concerns\HasPublicId;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -21,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read OnceOffCampaign $campaign
+ * @property-read Collection<int, Communication> $communications
  */
 class OnceOffCampaignContact extends Model
 {
@@ -43,5 +46,11 @@ class OnceOffCampaignContact extends Model
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(OnceOffCampaign::class, 'campaign_id');
+    }
+
+    /** @return HasMany<Communication, $this> */
+    public function communications(): HasMany
+    {
+        return $this->hasMany(Communication::class, 'contact_id');
     }
 }

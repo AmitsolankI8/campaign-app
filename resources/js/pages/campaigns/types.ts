@@ -1,4 +1,7 @@
-import type { CommunicationWorkStatus } from '@/types/communication';
+import type {
+    CommunicationStatus,
+    CommunicationWorkStatus,
+} from '@/types/communication';
 
 export const CAMPAIGN_TYPE_KEY = {
     onceOff: 'once_off',
@@ -78,6 +81,48 @@ export type OnceOffCampaignContact = {
     number: string;
     email: string | null;
     created_at: string | null;
+};
+
+export type OnceOffCampaignProviderAttempt = {
+    id: string;
+    attempt_number: number;
+    provider: string;
+    status: CommunicationStatus;
+    retryable: boolean;
+    error_code: string | null;
+    started_at: string;
+    completed_at: string | null;
+};
+
+export type OnceOffCampaignContactSchedule = {
+    id: string;
+    schedule_number: number;
+    channel: {
+        key: string;
+        label: string;
+    };
+    status: CommunicationWorkStatus;
+    scheduled_at: string;
+    communication: {
+        id: string;
+        type: {
+            value: number | null;
+            key: string;
+            label: string;
+        };
+        channel: {
+            key: string;
+            label: string;
+        };
+        status: CommunicationStatus;
+        scheduled_at: string;
+        provider_attempts: OnceOffCampaignProviderAttempt[];
+    } | null;
+};
+
+export type OnceOffCampaignContactDetails = OnceOffCampaignContact & {
+    schedule_count: number;
+    schedules: OnceOffCampaignContactSchedule[];
 };
 
 export type OnceOffCampaignContactImport = {
