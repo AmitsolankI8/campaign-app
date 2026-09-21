@@ -7,6 +7,9 @@ return [
         // Keys are account public IDs or channel.provider codes; values: success, failed, retryable, unknown.
         'outcomes' => [],
     ],
+    'smtp' => [
+        'timeout_seconds' => (float) env('COMMUNICATION_SMTP_TIMEOUT', 15),
+    ],
     'chunk_size' => 500,
     'recovery_limit' => 100,
     'lease_seconds' => 180,
