@@ -1,3 +1,10 @@
+# Local development workflow
+
+- The application is currently in active local development, and module flows are still subject to change. Do not create or modify automated test cases for a new feature or module unless the user explicitly requests tests. Existing tests may still be run when useful for verification.
+- The local database is refreshed and seeded after schema changes. When changing an existing table, edit its original create migration instead of creating an additional alter-table migration.
+- Create a new migration file only when a genuinely new table is required. Add new columns, indexes, constraints, or other changes for an existing table directly to that table's original create migration.
+- Revisit these temporary testing and migration policies before the application is deployed or requires forward-only schema upgrades.
+
 # Permission changes
 
 - Whenever a permission is added or changed, implement the matching frontend conditions in the same change. Check all related buttons, links, navigation items, menus, forms, and submission handlers.
@@ -38,7 +45,7 @@
 - Campaign create accepts `name`, `short_note`, and `campaign_type`; edit accepts only `name` and `short_note`. Do not allow edit flows to change campaign type or status until a status workflow is explicitly added.
 - Once-off campaign tabs stay in this order: Summary, Contacts, Upload Contacts, Schedule. Each tab owns a route, controller, and Inertia page: `OnceOffCampaignController@show`, `OnceOffCampaignContactController@index`, `OnceOffCampaignContactImportController@index`, and `OnceOffCampaignScheduleController@show`. Load only the current section's data, plus the shared first-attempt scheduled date needed by Basic details.
 - Use the persistent `OnceOffCampaignLayout.vue` for all once-off pages. Keep the campaign header, basic-details sidebar, and tabs visible on nested upload details. Define tab destinations and active pages in `useCampaignTabs.ts` using Wayfinder routes, not a `?tab=` query. Upload details belong to Upload Contacts.
-- Cover campaign changes with feature tests for permission denial/grants, datatable search/filter validation, resource payloads, default status, update restrictions, and type-specific show routing.
+- When tests are explicitly requested, cover campaign changes with feature tests for permission denial/grants, datatable search/filter validation, resource payloads, default status, update restrictions, and type-specific show routing.
 
 # Campaign type models
 
@@ -52,7 +59,7 @@
 - Keep once-off scheduling, contact staging, sync planning, syncing, and status changes on `OnceOffCampaign`, including `SaveOnceOffCampaignSchedules`, `StageCampaignContactUpload`, `CampaignContactSyncPlan`, `SyncOnceOffCampaignContactImport`, and `ChangeOnceOffCampaignStatus`. Re-query the subclass under the campaign lock before writes so stale models cannot bypass stored type or status restrictions. Lock the campaign before its child records.
 - Provide a matching factory under `Database\Factories\Campaigns` for each implemented subclass. Its `factory()` must return the subclass with the correct type and draft default. Reuse common fixture fields where useful, but explicitly override any reused once-off type default for ongoing or batch-processing factories. Keep `CampaignFactory` available for shared and mixed-type tests.
 - Implement each future type's controllers, services, child tables, pages, and lifecycle rules when its requirements are defined. Reuse shared infrastructure such as permissions, datatables, public resources, and date/time conversion; keep once-off attempt, upload, replacement, and launch rules specific to once-off campaigns unless explicitly required for another type. Wire each type through `CampaignType::showRouteName()` and the matching frontend type keys.
-- Cover each subclass with Pest tests for shared-table persistence, factory/model defaults, filtered queries, public-ID binding, wrong-type save rejection, relationship foreign keys and parent types, and stale stored-type checks under transaction locks. Retain shared CRUD, resource, cross-campaign isolation, and direct/inherited permission coverage as new types are implemented.
+- When tests are explicitly requested, cover each subclass with Pest tests for shared-table persistence, factory/model defaults, filtered queries, public-ID binding, wrong-type save rejection, relationship foreign keys and parent types, and stale stored-type checks under transaction locks. Retain shared CRUD, resource, cross-campaign isolation, and direct/inherited permission coverage as new types are implemented.
 
 # Once-off campaign schedules
 
@@ -66,7 +73,7 @@
 - Use `useDateTimeFormat.ts` with shared preferences for input conversion and display. Submit UTC ISO values, store UTC dates, and expose UTC ISO strings through resources. Expose public IDs only.
 - Save the whole submitted schedule transactionally through `SaveOnceOffCampaignSchedules`, locking the campaign first. Recheck retained IDs under the lock, remove omitted attempts, and renumber the remaining attempts. Failures must roll back deletions, edits, inserts, and numbering changes together.
 - In once-off Basic details, show `Scheduled At` directly below Campaign type. Use the saved attempt with `attempt_number = 1` through `Campaign::firstOnceOffSchedule`, shared as `campaign.scheduled_at`; show `--` when absent. Keep this field available on every once-off tab and nested upload details without loading the full schedule outside its own tab.
-- Cover schedule authentication, direct/inherited permissions, campaign isolation, required fields, chronology, channel validation, public resources, saving/repeated updates/removals, transactional rollback, stale IDs, and Basic details dates with Pest feature tests. Keep the fresh-local-schema policy: edit the original create migration for schema changes; add migrations only for new tables.
+- When tests are explicitly requested, cover schedule authentication, direct/inherited permissions, campaign isolation, required fields, chronology, channel validation, public resources, saving/repeated updates/removals, transactional rollback, stale IDs, and Basic details dates with Pest feature tests. Keep the fresh-local-schema policy: edit the original create migration for schema changes; add migrations only for new tables.
 
 # Once-off campaign contacts
 
@@ -79,7 +86,7 @@
 - Append adds new numbers and skips existing contacts; Update adds new numbers and updates matches while preserving saved optional values when uploaded values are blank. Allow individual, selected, and all-remaining row syncs for these modes. Keep prior values, errors, and outcomes; completed rows must not be processed again.
 - Replace requires a file, a draft campaign, and an entirely pending upload. Apply the entire upload together after confirming the current sync-plan fingerprint. Reject partial or stale replacement requests. Soft-delete contacts absent from the replacement, record the responsible upload, and retain history.
 - Keep sync operations transactional and lock the campaign before its upload. Recheck matches and validation at sync time, retain failed rows for retry, and derive pending/partially-synced/synced status from remaining rows. Failed replacements must roll back all contact and row changes.
-- Cover staging versus active contacts, validation without writes, private downloads, campaign isolation, permissions (direct and inherited), datatable behavior, public resource payloads, duplicate modes, partial/repeated syncs, and replacement safeguards with Pest feature tests.
+- When tests are explicitly requested, cover staging versus active contacts, validation without writes, private downloads, campaign isolation, permissions (direct and inherited), datatable behavior, public resource payloads, duplicate modes, partial/repeated syncs, and replacement safeguards with Pest feature tests.
 - During the current fresh-local-database development phase, fold schema changes into the original create migrations; add a migration only for a new table. Revisit this before changing any deployed schema.
 
 # Communication registry and seeding
@@ -88,5 +95,5 @@
 - `CommunicationSeeder` syncs registered metadata and creates missing provider records. Preserve existing credentials, activation status, priority, and public IDs when reseeding. Do not automatically delete records absent from the registry. Keep channel, provider, and credential field keys stable.
 - Read communication settings and field definitions from seeded database records at runtime. Settings requests may update only credentials, status, and priority; they must not create provider records or change registered metadata.
 - Keep credentials encrypted with `encrypted:array`. Never expose saved secrets in resources or flash them into validation input. Blank submitted secrets preserve their saved values.
-- Seed Communication test fixtures with `CommunicationSeeder`. Derive catalog counts and provider datasets from `CommunicationRegistry`, locate rows by channel/provider keys, and retain explicit provider fixtures for credential-specific behavior. Cover reseeding, metadata refresh, permission denial, and secret preservation.
+- When tests are explicitly requested, seed Communication test fixtures with `CommunicationSeeder`. Derive catalog counts and provider datasets from `CommunicationRegistry`, locate rows by channel/provider keys, and retain explicit provider fixtures for credential-specific behavior. Cover reseeding, metadata refresh, permission denial, and secret preservation.
 - Communication permissions remain in `PermissionRegistry` and are seeded by `UserManagementSeeder`. Do not reference removed per-setting permission seeders. `UserManagementSeeder` also manages default users, roles, and preferences; it is not a provider-only sync command.
